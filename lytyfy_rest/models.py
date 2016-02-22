@@ -9,7 +9,7 @@ class Lender(models.Model):
     last_name = models.CharField(max_length=30)
     mobile_number = models.CharField(max_length=13,null=True)
     email = models.CharField(max_length=30,null=True)
-    user=models.OneToOneField(User)
+    user=models.OneToOneField(User,related_name='lender')
     
 class LenderCurrentStatus(models.Model):
     lender=models.OneToOneField(Lender) 
@@ -28,7 +28,7 @@ class LenderWithdrawalRequest(models.Model):
     status_choices=((0,'Processing'),
                     (1,'Completed'),
                     (2,'Pending'))
-    lender=models.OneToOneField(Lender)
+    lender=models.ForeignKey(Lender)
     amount=models.FloatField(default=0)
     requested_at=models.DateTimeField()
     account_number=models.CharField(max_length=30)
@@ -79,4 +79,3 @@ class Token(models.Model):
 
     def __unicode__(self):
         return self.token
-
