@@ -177,6 +177,6 @@ class VerifyToken(APIView):
 	@token_required
 	def get(self,request,format=None):
 		pk=request.token.user.lender.id
-		lenderDetails=Lender.objects.values('id').get(pk=pk)
+		lenderDetails=Lender.objects.values('id','email').get(pk=pk)
 		return Response(lenderDetails,status=status.HTTP_200_OK)
 		
