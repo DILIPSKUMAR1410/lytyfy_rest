@@ -5,11 +5,11 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from lytyfy_rest.utils import token_required
 from django.contrib.auth.models import User
-from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest
+from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite
 import hashlib
 from random import randint
 from rest_framework import serializers
-from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
+from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer,RequestInviteSerializer
 from django.contrib.auth import authenticate
 
 
@@ -151,7 +151,7 @@ class GetToken(APIView):
 class KillToken(APIView):
 	@csrf_exempt
 	@token_required
-	def post(self,request):
+	def get(self,request):
 		request.token.delete()
 		return Response({'success':"Succesfully token killed"},status=status.HTTP_200_OK)
 
@@ -180,3 +180,21 @@ class VerifyToken(APIView):
 		lenderDetails=Lender.objects.values('id','email').get(pk=pk)
 		return Response(lenderDetails,status=status.HTTP_200_OK)
 		
+
+class RequestInvite(APIView):
+	def post(self,request,format=None):
+		params =request.data
+		if params:
+			# x= Invite.objects.get_or_create(email=params['email']
+			# 	if (x==1)
+			serializer=RequestInviteSerializer(data=params)
+			if serializer.is_valid():
+				serializer.save()
+				return Response({'message':"Request Send"},status=status.HTTP_200_OK)
+			else:
+				return Response({'error':"Invalid Request"},status=status.HTTP_400_BAD_REQUEST)
+				# else:
+				# 	return Response({'error':"Request is already in pending"},status=status.HTTP_400_BAD_REQUEST)
+
+		else:
+			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)

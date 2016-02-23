@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from lytyfy_rest.models import LenderDeviabTransaction,Lender,LenderWithdrawalRequest
+from lytyfy_rest.models import LenderDeviabTransaction,Lender,LenderWithdrawalRequest,Invite
 
 
 class LenderDeviabTransactionSerializer(serializers.ModelSerializer):
@@ -15,3 +15,7 @@ class LenderSerializer(serializers.ModelSerializer):
 class LenderWithdrawalRequestSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=LenderWithdrawalRequest
+
+class RequestInviteSerializer(serializers.ModelSerializer):
+	class Meta:
+		model=Invite

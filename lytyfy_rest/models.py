@@ -79,3 +79,7 @@ class Token(models.Model):
 
     def __unicode__(self):
         return self.token
+
+
+class Invite(models.Model):
+    email = models.CharField(max_length=30,null=True)
