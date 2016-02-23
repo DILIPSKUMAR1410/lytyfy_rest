@@ -5,19 +5,23 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from lytyfy_rest.utils import token_required
 from django.contrib.auth.models import User
-from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token
+from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite
 import hashlib
 from random import randint
 from rest_framework import serializers
-from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer
+from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer,RequestInviteSerializer
+from django.contrib.auth import authenticate
+
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
-		count=LenderDeviabTransactions.objects.filter(project__id=1).values('lender').distinct().count()
+		count=LenderDeviabTransaction.objects.filter(project__id=1).values('lender').distinct().count()
 		raised=Project.objects.get(pk=1).capitalAmount
-		return Response({'total_investors':count,'raised':raised},status=status.HTTP_200_OK)
+		return Response({'backers':count,'quantum':raised},status=status.HTTP_200_OK)
 
 class TransactionFormData(APIView):
+	@csrf_exempt
+	@token_required
 	def get(self,request,format=None):
 		if request.GET.get('amount',None) and request.GET.get('lenderId',None):
 			try:
@@ -49,6 +53,8 @@ class TransactionFormData(APIView):
 			return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionFormCapture(APIView):
+	@csrf_exempt
+	@token_required
 	def post(self,request,format=None):
 		params=request.data
 		if params:
@@ -63,14 +69,18 @@ class TransactionFormCapture(APIView):
 
 
 class GetLenderDetail(APIView):
+	@csrf_exempt
+	@token_required
 	def get(self,request,pk,format=None):
 		try:
-			lenderDetails=Lender.objects.values('first_name','email','mobile_number').get(pk=pk)
+			lenderDetails=Lender.objects.values('id','first_name','email','mobile_number').get(pk=pk)
 			return Response({'lenderDetails':lenderDetails},status=status.HTTP_200_OK)
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
 
 class GetLenderInvestmentDetail(APIView):
+	@csrf_exempt
+	@token_required
 	def get(self,request,pk,format=None):
 		try:
 			investmentDetails=LenderCurrentStatus.objects.values('principal_repaid','interest_repaid','emr').get(lender__id=pk)
@@ -91,6 +101,8 @@ class GetLenderInvestmentDetail(APIView):
 
 
 class UpdateLenderDetails(APIView):
+	@csrf_exempt
+	@token_required
 	def post(self,request,pk,format=None):
 		params=request.data
 		if params:
@@ -120,9 +132,9 @@ class Register(APIView):
 class GetToken(APIView):
 	@csrf_exempt
 	def post(self,request,format=None):
-		username = request.POST.get('username', None)
-		password = request.POST.get('password', None)
-
+		username = request.data.get('username', None)
+		password = request.data.get('password', None)
+		print request.data
 		if username is not None and password is not None:
 			user = authenticate(username=username, password=password)
 			if user is not None:
@@ -134,11 +146,55 @@ class GetToken(APIView):
 			else:
 				return Response({'error': 'Invalid Username/Password'},status=status.HTTP_400_BAD_REQUEST)
 		else:
-			return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
+			return Response({'error': 'No Credentials found'},status=status.HTTP_400_BAD_REQUEST)
 
 class KillToken(APIView):
 	@csrf_exempt
 	@token_required
-	def post(self,request):
+	def get(self,request):
 		request.token.delete()
 		return Response({'success':"Succesfully token killed"},status=status.HTTP_200_OK)
+
+class LenderWithdrawRequest(APIView):
+	def post(self,request,pk,format=None):
+		balance=LenderWallet.objects.get(lender__id=pk).balance
+		if balance < 1001:
+			return Response({'message':"your balance is less than 1000"},status=status.HTTP_200_OK)
+		params=request.data
+		if params:
+			params['amount']=balance
+			serializer=LenderWithdrawalRequestSerializer(data=params)
+			if serializer.is_valid():
+				serializer.save()
+				return Response({'message':"Request Send"},status=status.HTTP_200_OK)
+			else:
+				return Response({'error':"Invalid Request"},status=status.HTTP_400_BAD_REQUEST)
+		else:
+			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyToken(APIView):
+	@csrf_exempt
+	@token_required
+	def get(self,request,format=None):
+		pk=request.token.user.lender.id
+		lenderDetails=Lender.objects.values('id','email').get(pk=pk)
+		return Response(lenderDetails,status=status.HTTP_200_OK)
+		
+
+class RequestInvite(APIView):
+	def post(self,request,format=None):
+		params =request.data
+		if params:
+			# x= Invite.objects.get_or_create(email=params['email']
+			# 	if (x==1)
+			serializer=RequestInviteSerializer(data=params)
+			if serializer.is_valid():
+				serializer.save()
+				return Response({'message':"Request Send"},status=status.HTTP_200_OK)
+			else:
+				return Response({'error':"Invalid Request"},status=status.HTTP_400_BAD_REQUEST)
+				# else:
+				# 	return Response({'error':"Request is already in pending"},status=status.HTTP_400_BAD_REQUEST)
+
+		else:
+			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)
