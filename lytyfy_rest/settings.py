@@ -82,9 +82,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', 
         'NAME': 'deviab',
-        'USER': 'root',
-        'PASSWORD': 'vishnubpm',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
+        'USER': 'mrrobot',
+        'PASSWORD': 'DiVaNe_47',
+        'HOST': 'lytyfy-rds-dev.c4py8eplysvm.ap-southeast-1.rds.amazonaws.com',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
 }
