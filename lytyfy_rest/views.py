@@ -58,12 +58,16 @@ class TransactionFormCapture(APIView):
 	def post(self,request,format=None):
 		params=request.data
 		if params:
-			serializer=LenderDeviabTransactionSerializer(data=params,partial=True)
+			params['lender']=params['udf1']
+			params['project']=params['udf2']
+			del params['udf1']
+			del params['udf2']
+			serializer=LenderDeviabTransactionSerializer(data=params)
 			if serializer.is_valid():
 				serializer.save()
-				project=project.objects.get(pk=params['udf2']).creditCapitalAmount(params['amount'])
-				interest_left=params['amount'] * 0.6 / 100
-				return Response({'data':response},status=status.HTTP_200_OK)
+				Project.objects.get(pk=params['project']).creditCapitalAmount(params['amount']).save()
+				LenderCurrentStatus.objects.get(lender__id=params['lender']).updateCurrentStatus(params['amount']).save()
+				return Response({'message':"Transaction captured"},status=status.HTTP_200_OK)
 			else:
 				return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
 		else:
@@ -125,6 +129,11 @@ class Register(APIView):
 		if params['username'] is not None and params['password'] is not None:
 			try:
 				user = User.objects.create_user(params['username'], None, params['password'])
+				lender=Lender(user=user,email=user.username)
+				lender.save()
+				LenderCurrentStatus(lender=lender).save()
+				LenderWallet(lender=lender).save()
+				
 			except IntegrityError:
 				return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
 			token = Token.objects.create(user=user)
@@ -140,8 +149,14 @@ class GetToken(APIView):
 			user = authenticate(username=username, password=password)
 			if user is not None:
 				if user.is_active:
-					token, created = Token.objects.get_or_create(user=user)
-					return Response({'token': token.token,'username': user.username},status=status.HTTP_200_OK)
+					token_exist = Token.objects.filter(user=user)
+					if token_exist:
+						token=token_exist.first().token
+						return Response({'token': token,'username': user.username},status=status.HTTP_200_OK)	
+					else:
+						Token(user=user).save()
+						token_exist = Token.objects.filter(user=user).first().token
+						return Response({'token': new_token,'username': user.username},status=status.HTTP_200_OK)
 				else:
 					return Response({'error': 'Invalid User'},status=status.HTTP_400_BAD_REQUEST)
 			else:

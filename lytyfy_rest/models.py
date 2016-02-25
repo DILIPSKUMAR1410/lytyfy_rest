@@ -6,7 +6,7 @@ import os
 
 class Lender(models.Model):
     first_name = models.CharField(max_length=30)
-    last_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30,null=True)
     mobile_number = models.CharField(max_length=13,null=True)
     email = models.CharField(max_length=30,null=True)
     user=models.OneToOneField(User,related_name='lender')
@@ -17,8 +17,16 @@ class LenderCurrentStatus(models.Model):
     interest_repaid=models.FloatField(default=0)
     principal_left=models.FloatField(default=0)
     interest_left=models.FloatField(default=0)
-    tenure_left=models.FloatField(default=0)
+    tenure_left=models.FloatField(default=1)
     emr=models.FloatField(default=0)
+
+    def updateCurrentStatus(self,amount):
+        self.principal_left+=amount
+        il= amount *.6 / 100
+        self.interest_left+=il
+        self.emr=self.principal_left / self.tenure_left + self.interest_left;
+        return self
+
 
 class LenderWallet(models.Model):
     lender=models.OneToOneField(Lender)
@@ -30,7 +38,7 @@ class LenderWithdrawalRequest(models.Model):
                     (2,'Pending'))
     lender=models.ForeignKey(Lender)
     amount=models.FloatField(default=0)
-    requested_at=models.DateTimeField(auto_now=True)
+    requested_at=models.DateTimeField(auto_now_add=True)
     account_number=models.CharField(max_length=30)
     ifsc_code=models.CharField(max_length=30)
     account_name = models.CharField(max_length=30)
@@ -42,7 +50,7 @@ class Project(models.Model):
     capitalAmount=models.FloatField(default=0)
     def creditCapitalAmount(self,amount=None):
         self.capitalAmount+=amount
-        return self.capitalAmount
+        return self
 
 
 class LenderDeviabTransaction(models.Model):
@@ -51,7 +59,7 @@ class LenderDeviabTransaction(models.Model):
                     (2,'NB'))
     lender=models.ForeignKey(Lender)
     project= models.ForeignKey(Project)
-    timestamp=models.DateTimeField(auto_now=True)
+    timestamp=models.DateTimeField(auto_now_add=True)
     amount=models.FloatField(default=0)
     payment_id=models.FloatField(default=0)
     status=models.CharField(max_length=30)
