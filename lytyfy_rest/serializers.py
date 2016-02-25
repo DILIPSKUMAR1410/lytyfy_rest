@@ -5,7 +5,6 @@ from lytyfy_rest.models import LenderDeviabTransaction,Lender,LenderWithdrawalRe
 class LenderDeviabTransactionSerializer(serializers.ModelSerializer):
      class Meta:
         model = LenderDeviabTransaction
-        fields = '__all__'
 
 class LenderSerializer(serializers.ModelSerializer):
      class Meta:
@@ -15,7 +14,4 @@ class LenderSerializer(serializers.ModelSerializer):
 class LenderWithdrawalRequestSerializer(serializers.ModelSerializer):
 	class Meta:
 		model=LenderWithdrawalRequest
-
-class RequestInviteSerializer(serializers.ModelSerializer):
-	class Meta:
-		model=Invite
+		fields = ['account_number','ifsc_code','account_name','bank_name','amount','lender']

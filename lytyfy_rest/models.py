@@ -25,43 +25,45 @@ class LenderWallet(models.Model):
     balance=models.FloatField(default=0)
 
 class LenderWithdrawalRequest(models.Model):
-    status_choices=((0,'Processing'),
+    STATUS_CHOICES=((0,'Processing'),
                     (1,'Completed'),
                     (2,'Pending'))
     lender=models.ForeignKey(Lender)
     amount=models.FloatField(default=0)
-    requested_at=models.DateTimeField()
+    requested_at=models.DateTimeField(auto_now=True)
     account_number=models.CharField(max_length=30)
     ifsc_code=models.CharField(max_length=30)
     account_name = models.CharField(max_length=30)
     bank_name = models.CharField(max_length=30)
-    status = models.IntegerField(choices=status_choices,default=0)
+    status = models.IntegerField(choices=STATUS_CHOICES,default=0)
     
 
 class Project(models.Model):
     capitalAmount=models.FloatField(default=0)
+    def creditCapitalAmount(self,amount=None):
+        self.capitalAmount+=amount
+        return self.capitalAmount
+
 
 class LenderDeviabTransaction(models.Model):
+    PAYMENT_CHOICES=((0,'CC'),
+                    (1,'DC'),
+                    (2,'NB'))
     lender=models.ForeignKey(Lender)
     project= models.ForeignKey(Project)
     timestamp=models.DateTimeField(auto_now=True)
     amount=models.FloatField(default=0)
     payment_id=models.FloatField(default=0)
     status=models.CharField(max_length=30)
-    payment_mode=models.IntegerField()
+    payment_mode=models.IntegerField(choices=PAYMENT_CHOICES)
     customer_email=models.CharField(max_length=30)
     customer_phone=models.CharField(max_length=30)
     customer_name=models.CharField(max_length=30)
-    udf_1=models.CharField(max_length=30)
-    udf_2=models.CharField(max_length=30)
-    udf_3=models.CharField(max_length=30)
-    udf_4=models.CharField(max_length=30)
-    udf_5=models.CharField(max_length=30)
-    product_info=models.CharField(max_length=30)
-    additional_charges=models.FloatField(default=0)
-    split_info=models.CharField(max_length=30)
-    error_message=models.CharField(max_length=30)
-    notification=models.CharField(max_length=30)
+    product_info=models.CharField(max_length=30,null=True)
+    additional_charges=models.FloatField(default=0,null=True)
+    split_info=models.CharField(max_length=255,null=True)
+    error_message=models.CharField(max_length=30,null=True)
+    notification=models.CharField(max_length=30,null=True)
 
 
 class Token(models.Model):
@@ -82,4 +84,4 @@ class Token(models.Model):
 
 
 class Invite(models.Model):
-    email = models.CharField(max_length=30,null=True)
+    email = models.CharField(max_length=30)
