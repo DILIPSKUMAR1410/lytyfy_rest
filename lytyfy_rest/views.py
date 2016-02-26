@@ -12,6 +12,7 @@ from random import randint
 from rest_framework import serializers
 from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
 from django.contrib.auth import authenticate
+from django.shortcuts import redirect
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
@@ -39,9 +40,8 @@ class TransactionFormData(APIView):
 			  	response['productinfo']= "DhamdhaPilot"
 			  	response['service_provider']="payu_paisa"
 			  	response['hash']=  hashlib.sha512(hashing).hexdigest()
-			  	response['curl']= "http://try.lytyfy.org/#/dashboard"
-			  	response['furl']= "http://try.lytyfy.org/api/v1/projects/webhook/success"
-			  	response['surl']= "http://try.lytyfy.org/api/v1/projects/webhook/success"
+			  	response['furl']= "http://54.169.219.140/api/formcapture"
+			  	response['surl']= "http://54.169.219.140/api/formcapture"
 			  	response['udf2']= 1
 			  	response['udf1']= params['lenderId']
 			  	response['amount']= params['amount']
@@ -67,11 +67,11 @@ class TransactionFormCapture(APIView):
 				serializer.save()
 				Project.objects.get(pk=params['project']).creditCapitalAmount(params['amount']).save()
 				LenderCurrentStatus.objects.get(lender__id=params['lender']).updateCurrentStatus(params['amount']).save()
-				return Response({'message':"Transaction captured"},status=status.HTTP_200_OK)
+				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
-				return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
+				return redirect("http://try.lytyfy.org/#/dashboard")
 		else:
-			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)		
+			return redirect("http://try.lytyfy.org/#/dashboard")	
 
 
 class GetLenderDetail(APIView):
