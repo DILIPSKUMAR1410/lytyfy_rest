@@ -63,7 +63,7 @@ class TransactionFormCapture(APIView):
 			del params['udf1']
 			del params['udf2']
 			serializer=LenderDeviabTransactionSerializer(data=params)
-			serializer.is_valid():
+			serializer.is_valid()
 			print serializer.errors
 			if serializer.is_valid():
 				serializer.save()
