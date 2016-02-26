@@ -56,7 +56,7 @@ class TransactionFormCapture(APIView):
 	# @csrf_exempt
 	# @token_required
 	def post(self,request,format=None):
-		params=request.data
+		params=dict(request.data)
 		if params:
 			params['lender']=params['udf1']
 			params['project']=params['udf2']
