@@ -20,56 +20,65 @@ class HomePageApi(APIView):
 		raised=Project.objects.get(pk=1).capitalAmount
 		return Response({'backers':count,'quantum':raised},status=status.HTTP_200_OK)
 
-class TransactionFormCapture(APIView):
+class TransactionFormData(APIView):
 	@csrf_exempt
 	@token_required
-	def post(self,request,format=None):
-	params=dict(request.data)
-	if params:
-		trasaction={}
-		trasaction['lender']=params['udf1'][0]
-		trasaction['project']=params['udf2'][0]
-		trasaction['amount']=float(params['amount'][0])
-		trasaction['customer_email']=params['email'][0]
-		trasaction['payment_id']=params['payuMoneyId'][0]
-		trasaction['status']=params['status'][0]
-		trasaction['payment_mode']=1
-		trasaction['customer_phone']=params['phone'][0]
-		trasaction['customer_name']=params['firstname'][0]
-		trasaction['product_info']=params['productinfo'][0]
-		serializer=LenderDeviabTransactionSerializer(data=trasaction)
-		if serializer.is_valid():
-			serializer.save()
-			Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
-			LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
-			return redirect("http://try.lytyfy.org/#/dashboard")
+	def get(self,request,format=None):
+		if request.GET.get('amount',None) and request.GET.get('lenderId',None):
+			try:
+				params=request.GET
+				data=Lender.objects.values('first_name','email','mobile_number').get(pk=params['lenderId'])
+				if not data['first_name'] or not data['email']  and not data['mobile_number']:
+					return Response({'error':"Please provide your profile details "},status=status.HTTP_400_BAD_REQUEST) 
+				txnid=str(randint(100000, 999999))
+				hashing= "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + "DhamdhaPilot" + "|" + data['first_name'] + "|" + data['email'] + "|" + params['lenderId'] + "|" + "1" + "|||||||||" + "k1wOOh0b"
+				response={}
+				response['firstname']=data['first_name']
+				response['email']=data['email']
+				response['phone']=data['mobile_number']
+				response['key']="vz70Zb"
+			  	response['productinfo']= "DhamdhaPilot"
+			  	response['service_provider']="payu_paisa"
+			  	response['hash']=  hashlib.sha512(hashing).hexdigest()
+			  	response['furl']= "http://54.169.108.176/api/formcapture"
+			  	response['surl']= "http://54.169.108.176/api/formcapture"
+			  	response['udf2']= 1
+			  	response['udf1']= params['lenderId']
+			  	response['amount']= params['amount']
+			  	response['txnid']= txnid
+				return Response(response,status=status.HTTP_200_OK)
+			except:
+				return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
 		else:
-			return redirect("http://try.lytyfy.org/#/dashboard")
-	else:
-		return redirect("http://try.lytyfy.org/#/dashboard") 
+			return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionFormCapture(APIView):
-	# @csrf_exempt
+	@csrf_exempt
 	# @token_required
 	def post(self,request,format=None):
 		params=dict(request.data)
 		if params:
-			params['lender']=params['udf1']
-			params['project']=params['udf2']
-			del params['udf1']
-			del params['udf2']
-			serializer=LenderDeviabTransactionSerializer(data=params)
-			serializer.is_valid()
-			print serializer.errors
+			trasaction={}
+			trasaction['lender']=params['udf1'][0]
+			trasaction['project']=params['udf2'][0]
+			trasaction['amount']=float(params['amount'][0])
+			trasaction['customer_email']=params['email'][0]
+			trasaction['payment_id']=params['payuMoneyId'][0]
+			trasaction['status']=params['status'][0]
+			trasaction['payment_mode']=1
+			trasaction['customer_phone']=params['phone'][0]
+			trasaction['customer_name']=params['firstname'][0]
+			trasaction['product_info']=params['productinfo'][0]
+			serializer=LenderDeviabTransactionSerializer(data=trasaction)
 			if serializer.is_valid():
 				serializer.save()
-				Project.objects.get(pk=params['project']).creditCapitalAmount(params['amount']).save()
-				LenderCurrentStatus.objects.get(lender__id=params['lender']).updateCurrentStatus(params['amount']).save()
+				Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
+				LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
 				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
 				return redirect("http://try.lytyfy.org/#/dashboard")
 		else:
-			return redirect("http://try.lytyfy.org/#/dashboard")	
+			return redirect("http://try.lytyfy.org/#/dashboard") 	
 
 
 class GetLenderDetail(APIView):
