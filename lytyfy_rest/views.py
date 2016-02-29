@@ -157,7 +157,7 @@ class GetToken(APIView):
 						return Response({'token': token,'username': user.username},status=status.HTTP_200_OK)	
 					else:
 						Token(user=user).save()
-						token_exist = Token.objects.filter(user=user).first().token
+						new_token = Token.objects.filter(user=user).first().token
 						return Response({'token': new_token,'username': user.username},status=status.HTTP_200_OK)
 				else:
 					return Response({'error': 'Invalid User'},status=status.HTTP_400_BAD_REQUEST)
