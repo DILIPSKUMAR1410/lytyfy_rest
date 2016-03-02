@@ -74,11 +74,11 @@ class TransactionFormCapture(APIView):
 				serializer.save()
 				Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
 				LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
-				return redirect("http://v3.lytyfy.org/#/dashboard")
+				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
-				return redirect("http://v3.lytyfy.org/#/dashboard")
+				return redirect("http://try.lytyfy.org/#/dashboard")
 		else:
-			return redirect("http://v3.lytyfy.org/#/dashboard ") 	
+			return redirect("http://try.lytyfy.org/#/dashboard") 	
 
 
 class GetLenderDetail(APIView):
