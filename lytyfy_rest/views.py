@@ -74,11 +74,11 @@ class TransactionFormCapture(APIView):
 				serializer.save()
 				Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
 				LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
-				return redirect("http://54.254.136.167/#/invest")
+				return redirect("http://v3.lytyfy.org/#/dashboard")
 			else:
-				return redirect("http://54.254.136.167/#/invest")
+				return redirect("http://v3.lytyfy.org/#/dashboard")
 		else:
-			return redirect("http://54.254.136.167/#/invest") 	
+			return redirect("http://v3.lytyfy.org/#/dashboard ") 	
 
 
 class GetLenderDetail(APIView):
@@ -92,26 +92,26 @@ class GetLenderDetail(APIView):
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
 
 class GetLenderInvestmentDetail(APIView):
-	@csrf_exempt
-	@token_required
+	# @csrf_exempt
+	# @token_required
 	def get(self,request,pk,format=None):
-		try:
-			investmentDetails=LenderCurrentStatus.objects.values('principal_repaid','interest_repaid','emr').get(lender__id=pk)
-			investmentDetails['credits']=LenderWallet.objects.values_list('balance').get(lender__id=pk)[0]
-			investmentDetails['transactions']=LenderDeviabTransaction.objects.filter(project__id=1,lender__id=pk).values('amount','payment_id','timestamp')
-			totalInvestment=0
-			for transaction in investmentDetails['transactions']:
-				transaction['type']="debit"
-				totalInvestment+=transaction['amount']
-			investmentDetails['totalInvestment']=totalInvestment	
-			totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender__id=pk).values('amount')
-			totalWithdrawal=0
-			for withdraw in totalAmountWithdraw:
-				totalWithdrawal+=withdraw['amount']
-			investmentDetails['totalWithdrawal']=totalWithdrawal
-			return Response(investmentDetails,status=status.HTTP_200_OK)
-		except:
-			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
+		
+		investmentDetails=LenderCurrentStatus.objects.values('principal_repaid','interest_repaid','emr').get(lender__id=pk)
+		investmentDetails['credits']=LenderWallet.objects.values_list('balance').get(lender__id=pk)[0]
+		investmentDetails['transactions']=LenderDeviabTransaction.objects.filter(project__id=1,lender__id=pk).values('amount','payment_id','timestamp')
+		totalInvestment=0
+		for transaction in investmentDetails['transactions']:
+			transaction['type']="debit"
+			transaction['timestamp']=transaction['timestamp'].strftime("%b %d %Y %r")
+			totalInvestment+=transaction['amount']
+		investmentDetails['totalInvestment']=totalInvestment	
+		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender__id=pk).values('amount')
+		totalWithdrawal=0
+		for withdraw in totalAmountWithdraw:
+			totalWithdrawal+=withdraw['amount']
+		investmentDetails['totalWithdrawal']=totalWithdrawal
+		return Response(investmentDetails,status=status.HTTP_200_OK)
+		
 
 
 class UpdateLenderDetails(APIView):
