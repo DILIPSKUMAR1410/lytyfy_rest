@@ -74,11 +74,11 @@ class TransactionFormCapture(APIView):
 				serializer.save()
 				Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
 				LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
-				return redirect("http://54.254.136.167/#/dashboard")
+				return redirect("http://54.254.136.167/#/invest")
 			else:
-				return redirect("http://54.254.136.167/#/dashboard")
+				return redirect("http://54.254.136.167/#/invest")
 		else:
-			return redirect("http://54.254.136.167/#/dashboard") 	
+			return redirect("http://54.254.136.167/#/invest") 	
 
 
 class GetLenderDetail(APIView):
