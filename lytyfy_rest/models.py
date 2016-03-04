@@ -1,8 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from datetime import datetime
 import binascii
 import os
+from django.utils import timezone
 
 class Lender(models.Model):
     first_name = models.CharField(max_length=30)
@@ -38,7 +38,7 @@ class LenderWithdrawalRequest(models.Model):
                     (2,'Pending'))
     lender=models.ForeignKey(Lender)
     amount=models.FloatField(default=0)
-    requested_at=models.DateTimeField(auto_now_add=True)
+    requested_at=models.DateTimeField(default=timezone.now())
     account_number=models.CharField(max_length=30)
     ifsc_code=models.CharField(max_length=30)
     account_name = models.CharField(max_length=30)
@@ -59,7 +59,7 @@ class LenderDeviabTransaction(models.Model):
                     (2,'NB'))
     lender=models.ForeignKey(Lender)
     project= models.ForeignKey(Project)
-    timestamp=models.DateTimeField(auto_now_add=True)
+    timestamp=models.DateTimeField(default=timezone.now())
     amount=models.FloatField(default=0)
     payment_id=models.FloatField(default=0)
     status=models.CharField(max_length=30)
@@ -77,7 +77,7 @@ class LenderDeviabTransaction(models.Model):
 class Token(models.Model):
     user = models.ForeignKey(User)
     token = models.CharField(max_length=40, primary_key=True)
-    created = models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(default=timezone.now())
 
     def save(self, *args, **kwargs):
         if not self.token:

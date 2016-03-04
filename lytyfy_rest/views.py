@@ -14,6 +14,7 @@ from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSeri
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect
 
+
 class HomePageApi(APIView):
 	def get(self, request,format=None):
 		count=LenderDeviabTransaction.objects.filter(project__id=1).values('lender').distinct().count()
@@ -102,7 +103,7 @@ class GetLenderInvestmentDetail(APIView):
 		totalInvestment=0
 		for transaction in investmentDetails['transactions']:
 			transaction['type']="debit"
-			transaction['timestamp']=transaction['timestamp'].strftime("%b %d %Y %r")
+			transaction['timestamp']=transaction['timestamp'].strftime("%d %b %Y %r")
 			totalInvestment+=transaction['amount']
 		investmentDetails['totalInvestment']=totalInvestment	
 		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender__id=pk).values('amount')
