@@ -93,8 +93,8 @@ class GetLenderDetail(APIView):
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
 
 class GetLenderInvestmentDetail(APIView):
-	# @csrf_exempt
-	# @token_required
+	@csrf_exempt
+	@token_required
 	def get(self,request,pk,format=None):
 		
 		investmentDetails=LenderCurrentStatus.objects.values('principal_repaid','interest_repaid','emr').get(lender__id=pk)
@@ -142,7 +142,6 @@ class Register(APIView):
 				lender.save()
 				LenderCurrentStatus(lender=lender).save()
 				LenderWallet(lender=lender).save()
-				
 			except IntegrityError:
 				return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
 			token = Token.objects.create(user=user)
@@ -217,8 +216,15 @@ class RequestInvite(APIView):
 		params =request.data
 		if params:
 			invite,created= Invite.objects.get_or_create(email=params['email'])
-			print invite.email,created
 			if created:
+				try:
+					user = User.objects.create_user(params['email'], None, "deviab@123")
+					lender=Lender(user=user,email=user.username)
+					lender.save()
+					LenderCurrentStatus(lender=lender).save()
+					LenderWallet(lender=lender).save()
+				except IntegrityError:
+					return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
 				return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
 			else:
 				return Response({'message':"Email is already registered"},status=status.HTTP_200_OK)

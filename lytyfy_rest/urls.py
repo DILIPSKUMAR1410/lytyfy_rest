@@ -29,7 +29,6 @@ urlpatterns = [
     url(r'^api/lender/token/kill$', views.KillToken.as_view()),
     url(r'^api/lenders/(?P<pk>[0-9]+)/withdraw$', views.LenderWithdrawRequest.as_view()),
     url(r'^api/lender/token/verify$', views.VerifyToken.as_view()),
-    # url(r'^api/lenders/(?P<pk>[0-9]+)/changepassword$', views.UserChangePassword.as_view()),
     url(r'^api/requestinvite$', views.RequestInvite.as_view()),
     url(r'^api/lenders/(?P<pk>[0-9]+)/changepassword$', views.ChangePassword.as_view()),
     

@@ -17,7 +17,7 @@ class LenderCurrentStatus(models.Model):
     interest_repaid=models.FloatField(default=0)
     principal_left=models.FloatField(default=0)
     interest_left=models.FloatField(default=0)
-    tenure_left=models.FloatField(default=1)
+    tenure_left=models.FloatField(default=8)
     emr=models.FloatField(default=0)
 
     def updateCurrentStatus(self,amount):
