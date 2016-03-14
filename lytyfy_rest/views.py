@@ -103,7 +103,7 @@ class GetLenderInvestmentDetail(APIView):
 		totalInvestment=0
 		for transaction in investmentDetails['transactions']:
 			transaction['type']="debit"
-			transaction['timestamp']=transaction['timestamp'].strftime("%d %b %Y %r")
+			transaction['timestamp']=transaction['timestamp'].strftime("%d %b %Y|%r")
 			totalInvestment+=transaction['amount']
 		investmentDetails['totalInvestment']=totalInvestment	
 		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender__id=pk).values('amount')
