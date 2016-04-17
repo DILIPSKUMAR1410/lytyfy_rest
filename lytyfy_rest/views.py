@@ -73,7 +73,7 @@ class TransactionFormCapture(APIView):
 			serializer=LenderDeviabTransactionSerializer(data=trasaction)
 			if serializer.is_valid():
 				serializer.save()
-				Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
+				Project.objects.get(pk=trasaction['project']).raiseAmount(trasaction['amount']).save()
 				LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
 				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
@@ -252,6 +252,25 @@ class ChangePassword(APIView):
 				return Response({'error':"lender not found"},status=status.HTTP_400_BAD_REQUEST)
 		else:
 			return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
-			
+
+
+
+class ListProject(APIView):
+	def get(self, request,format=None):
+		projects=Project.objects.all()
+		data=[]
+		for project in projects:
+			project_detail={}
+			project_detail['borrowers']=project.borrowers.all().values('first_name','last_name','avatar')
+			project_detail['lenders']=project.lenders.all().values('lender_id','lender__first_name','lender__avatar')
+			project_detail['title']=project.title
+			project_detail['raisedAmount']=project.raisedAmount
+			project_detail['targetAmount']=project.targetAmount
+			project_detail['place']=project.place
+			project_detail['description']=project.description
+			project_detail['offlistDate']=project.offlistDate
+			data.append(project_detail)
+		return Response(data,status=status.HTTP_200_OK)
+
 
 

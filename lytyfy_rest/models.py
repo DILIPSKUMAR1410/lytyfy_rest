@@ -10,23 +10,7 @@ class Lender(models.Model):
     mobile_number = models.CharField(max_length=13,null=True)
     email = models.CharField(max_length=30,null=True)
     user=models.OneToOneField(User,related_name='lender')
-    
-class LenderCurrentStatus(models.Model):
-    lender=models.OneToOneField(Lender) 
-    principal_repaid=models.FloatField(default=0)
-    interest_repaid=models.FloatField(default=0)
-    principal_left=models.FloatField(default=0)
-    interest_left=models.FloatField(default=0)
-    tenure_left=models.FloatField(default=8)
-    emr=models.FloatField(default=0)
-
-    def updateCurrentStatus(self,amount):
-        self.principal_left+=amount
-        il= amount *.6 / 100
-        self.interest_left+=il
-        self.emr=self.principal_left / self.tenure_left + self.interest_left;
-        return self
-
+    avatar=models.CharField(max_length=30,null=True)
 
 class LenderWallet(models.Model):
     lender=models.OneToOneField(Lender)
@@ -47,9 +31,16 @@ class LenderWithdrawalRequest(models.Model):
     
 
 class Project(models.Model):
-    capitalAmount=models.FloatField(default=0)
-    def creditCapitalAmount(self,amount=None):
-        self.capitalAmount+=amount
+    title=models.CharField(max_length=30)
+    raisedAmount=models.FloatField(default=0)
+    targetAmount=models.FloatField(default=0)
+    place=models.CharField(max_length=30)
+    description=models.TextField()
+    enlistDate=models.DateTimeField(default=timezone.now())
+    offlistDate=models.DateTimeField()
+    
+    def raiseAmount(self,amount=None):
+        self.raisedAmount+=amount
         return self
 
 
@@ -93,3 +84,28 @@ class Token(models.Model):
 
 class Invite(models.Model):
     email = models.CharField(max_length=30)
+
+
+class LenderCurrentStatus(models.Model):
+    lender=models.ForeignKey(Lender) 
+    principal_repaid=models.FloatField(default=0)
+    interest_repaid=models.FloatField(default=0)
+    principal_left=models.FloatField(default=0)
+    interest_left=models.FloatField(default=0)
+    tenure_left=models.FloatField(default=8)
+    emr=models.FloatField(default=0)
+    project=models.ForeignKey(Project,related_name="lenders")
+
+    def updateCurrentStatus(self,amount):
+        self.principal_left+=amount
+        il= amount *.6 / 100
+        self.interest_left+=il
+        self.emr=self.principal_left / self.tenure_left + self.interest_left;
+        return self
+
+class Borrower(models.Model):
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30,null=True)
+    mobile_number = models.CharField(max_length=13,null=True)
+    avatar=models.CharField(max_length=30,null=True)
+    project=models.ForeignKey(Project,related_name="borrowers",null=True)
