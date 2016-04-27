@@ -41,8 +41,8 @@ class TransactionFormData(APIView):
 			  	response['productinfo']= "DhamdhaPilot"
 			  	response['service_provider']="payu_paisa"
 			  	response['hash']=  hashlib.sha512(hashing).hexdigest()
-			  	response['furl']= "http://54.169.108.176/api/formcapture"
-			  	response['surl']= "http://54.169.108.176/api/formcapture"
+			  	response['furl']= "http://54.254.195.114/api/formcapture"
+			  	response['surl']= "http://54.254.195.114/api/formcapture"
 			  	response['udf2']= 1
 			  	response['udf1']= params['lenderId']
 			  	response['amount']= params['amount']
