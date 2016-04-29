@@ -87,7 +87,7 @@ class Invite(models.Model):
 
 
 class LenderCurrentStatus(models.Model):
-    lender=models.ForeignKey(Lender) 
+    lender=models.ForeignKey(Lender,related_name="projects") 
     principal_repaid=models.FloatField(default=0)
     interest_repaid=models.FloatField(default=0)
     principal_left=models.FloatField(default=0)
