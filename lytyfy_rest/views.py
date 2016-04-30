@@ -280,6 +280,8 @@ class ListProject(APIView):
 			project_detail['repayment_schedule']="Monthly"
 			project_detail['status']= "running" if project.offlistDate > timezone.now() else "completed"
 			project_detail['amount_to_invest']=""
+			if request.GET.get('lenderId',None):
+				project_detail['current_user_invested']=any(int(lender['lender_id']) == int(request.GET.get('lenderId')) for lender in project_detail['lenders'])
 			data.append(project_detail)
 		return Response(data,status=status.HTTP_200_OK)
 
