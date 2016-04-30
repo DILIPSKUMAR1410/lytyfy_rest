@@ -59,7 +59,7 @@ class TransactionFormCapture(APIView):
 	# @token_required
 	def post(self,request,format=None):
 		params=dict(request.data)
-		if params:
+		if params and params['status'][0]=="success":
 			trasaction={}
 			trasaction['lender']=params['udf1'][0]
 			trasaction['project']=params['udf2'][0]
