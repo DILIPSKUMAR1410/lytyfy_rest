@@ -220,7 +220,7 @@ class RequestInvite(APIView):
 			if created:
 				try:
 					subject = """New request for invitation by """+params['email']
-					approve_link = "http://127.0.0.1:8000/api/lender/register?username="+params['email']
+					approve_link = "http://54.254.195.114/api/lender/register?username="+params['email']
 					html_message = 'Hi Deepak, We got a new request for invitation. Click YES to approve else ignore this mail<br> <a href='+approve_link+'>YES</a>'
 					send_mail(subject,None, "support@lytyfy.org",['connect2sdeepak@gmail.com'], fail_silently=True,html_message=html_message)
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
