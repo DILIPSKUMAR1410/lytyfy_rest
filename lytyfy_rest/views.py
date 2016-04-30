@@ -279,6 +279,7 @@ class ListProject(APIView):
 			project_detail['repayment_term']=8
 			project_detail['repayment_schedule']="Monthly"
 			project_detail['status']= "running" if project.offlistDate > timezone.now() else "completed"
+			project_detail['amount_to_invest']=""
 			data.append(project_detail)
 		return Response(data,status=status.HTTP_200_OK)
 
