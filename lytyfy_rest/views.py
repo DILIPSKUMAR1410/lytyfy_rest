@@ -13,6 +13,7 @@ from rest_framework import serializers
 from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect
+from django.core.mail import send_mail
 
 
 class HomePageApi(APIView):
@@ -133,11 +134,11 @@ class UpdateLenderDetails(APIView):
 
 class Register(APIView):
 	@csrf_exempt
-	def post(self,request,format=None):
-		params=request.data
-		if params['username'] is not None and params['password'] is not None:
+	def get(self,request,format=None):
+		params=request.GET
+		if params['username'] is not None:
 			try:
-				user = User.objects.create_user(params['username'], None, params['password'])
+				user = User.objects.create_user(params['username'], None, "deviab@123")
 				lender=Lender(user=user,email=user.username)
 				lender.save()
 				LenderCurrentStatus(lender=lender).save()
@@ -218,14 +219,13 @@ class RequestInvite(APIView):
 			invite,created= Invite.objects.get_or_create(email=params['email'])
 			if created:
 				try:
-					user = User.objects.create_user(params['email'], None, "deviab@123")
-					lender=Lender(user=user,email=user.username)
-					lender.save()
-					LenderCurrentStatus(lender=lender).save()
-					LenderWallet(lender=lender).save()
-				except IntegrityError:
-					return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
-				return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
+					subject = """New request for invitation by """+params['email']
+					approve_link = "http://54.254.195.114/api/lender/register?username="+params['email']
+					html_message = 'Hi Deepak, We got a new request for invitation. Click YES to approve else ignore this mail<br> <a href='+approve_link+'>YES</a>'
+					send_mail(subject,None, "support@lytyfy.org",['connect2sdeepak@gmail.com'], fail_silently=True,html_message=html_message)
+					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
+				except:
+					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
 			else:
 				return Response({'message':"Email is already registered"},status=status.HTTP_200_OK)
 		else:
