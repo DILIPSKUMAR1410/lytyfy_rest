@@ -141,6 +141,8 @@ class Register(APIView):
 				user = User.objects.create_user(params['username'], None, "deviab@123")
 				lender=Lender(user=user,email=user.username)
 				lender.save()
+				LenderCurrentStatus(lender=lender).save()
+				LenderWallet(lender=lender).save()
 			except IntegrityError:
 				return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
 			token = Token.objects.create(user=user)
