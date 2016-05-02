@@ -102,22 +102,30 @@ class GetLenderInvestmentDetail(APIView):
 	@csrf_exempt
 	@token_required
 	def get(self,request,pk,format=None):
-		
-		investmentDetails=LenderCurrentStatus.objects.values('principal_repaid','interest_repaid','emr').get(lender__id=pk)
-		investmentDetails['credits']=LenderWallet.objects.values_list('balance').get(lender__id=pk)[0]
-		investmentDetails['transactions']=LenderDeviabTransaction.objects.filter(project__id=1,lender__id=pk).values('amount','payment_id','timestamp')
+		data={}
+		data['investmentDetails']=LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','interest_repaid','emr','project__title')
+		totalPrincipalRepaid=totalInterestRepaid=totalEmr=0
+		for investmentDetail in data['investmentDetails']:
+			totalPrincipalRepaid+=investmentDetail['principal_repaid']
+			totalInterestRepaid+=investmentDetail['interest_repaid']
+			totalEmr+=investmentDetail['emr']
+		data['totalPrincipalRepaid']=totalPrincipalRepaid
+		data['totalInterestRepaid']=totalInterestRepaid
+		data['totalEmr']=totalEmr
+		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
+		data['transactions']=LenderDeviabTransaction.objects.filter(project_id=1,lender_id=pk).values('amount','payment_id','timestamp','project__title')
 		totalInvestment=0
-		for transaction in investmentDetails['transactions']:
+		for transaction in data['transactions']:
 			transaction['type']="debit"
 			transaction['timestamp']=transaction['timestamp'].strftime("%d, %b %Y | %r")
 			totalInvestment+=transaction['amount']
-		investmentDetails['totalInvestment']=totalInvestment	
-		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender__id=pk).values('amount')
+		data['totalInvestment']=totalInvestment	
+		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender_id=pk).values('amount')
 		totalWithdrawal=0
 		for withdraw in totalAmountWithdraw:
 			totalWithdrawal+=withdraw['amount']
-		investmentDetails['totalWithdrawal']=totalWithdrawal
-		return Response(investmentDetails,status=status.HTTP_200_OK)
+		data['totalWithdrawal']=totalWithdrawal
+		return Response(data,status=status.HTTP_200_OK)
 		
 
 

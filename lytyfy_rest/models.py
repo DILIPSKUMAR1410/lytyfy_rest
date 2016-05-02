@@ -52,7 +52,7 @@ class LenderDeviabTransaction(models.Model):
     project= models.ForeignKey(Project)
     timestamp=models.DateTimeField(default=timezone.now())
     amount=models.FloatField(default=0)
-    payment_id=models.FloatField(default=0)
+    payment_id=models.IntegerField(default=0)
     status=models.CharField(max_length=30)
     payment_mode=models.IntegerField(choices=PAYMENT_CHOICES)
     customer_email=models.CharField(max_length=30)
