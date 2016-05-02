@@ -113,7 +113,7 @@ class GetLenderInvestmentDetail(APIView):
 		data['totalInterestRepaid']=totalInterestRepaid
 		data['totalEmr']=totalEmr
 		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
-		data['transactions']=LenderDeviabTransaction.objects.filter(project_id=1,lender_id=pk).values('amount','payment_id','timestamp','project__title')
+		data['transactions']=LenderDeviabTransaction.objects.filter(lender_id=pk).values('amount','payment_id','timestamp','project__title')
 		totalInvestment=0
 		for transaction in data['transactions']:
 			transaction['type']="debit"
