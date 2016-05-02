@@ -15,7 +15,7 @@ from django.contrib.auth import authenticate
 from django.shortcuts import redirect
 from django.utils import timezone
 from django.core.mail import send_mail
-
+from django.db.models import Sum
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
@@ -103,23 +103,26 @@ class GetLenderInvestmentDetail(APIView):
 	@token_required
 	def get(self,request,pk,format=None):
 		data={}
-		data['investmentDetails']=LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','interest_repaid','emr','project__title')
-		totalPrincipalRepaid=totalInterestRepaid=totalEmr=0
-		for investmentDetail in data['investmentDetails']:
-			totalPrincipalRepaid+=investmentDetail['principal_repaid']
-			totalInterestRepaid+=investmentDetail['interest_repaid']
-			totalEmr+=investmentDetail['emr']
-		data['totalPrincipalRepaid']=totalPrincipalRepaid
-		data['totalInterestRepaid']=totalInterestRepaid
-		data['totalEmr']=totalEmr
-		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
-		data['transactions']=LenderDeviabTransaction.objects.filter(lender_id=pk).values('amount','payment_id','timestamp','project__title')
+		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
+		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title')
+		map_data=ldt.values('project__title').annotate(investment = Sum('amount'))
 		totalInvestment=0
 		for transaction in data['transactions']:
 			transaction['type']="debit"
 			transaction['timestamp']=transaction['timestamp'].strftime("%d, %b %Y | %r")
 			totalInvestment+=transaction['amount']
 		data['totalInvestment']=totalInvestment	
+		data['investmentDetails']=LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','interest_repaid','emr','project__title')
+		totalPrincipalRepaid=totalInterestRepaid=totalEmr=0
+		for investmentDetail in data['investmentDetails']:
+			totalPrincipalRepaid+=investmentDetail['principal_repaid']
+			totalInterestRepaid+=investmentDetail['interest_repaid']
+			totalEmr+=investmentDetail['emr']			
+			investmentDetail['investment']=[item['investment'] for item in map_data if item["project__title"] == investmentDetail["project__title"]][0]		
+		data['totalPrincipalRepaid']=totalPrincipalRepaid
+		data['totalInterestRepaid']=totalInterestRepaid
+		data['totalEmr']=totalEmr
+		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
 		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender_id=pk).values('amount')
 		totalWithdrawal=0
 		for withdraw in totalAmountWithdraw:
