@@ -48,8 +48,8 @@ class LenderDeviabTransaction(models.Model):
     PAYMENT_CHOICES=((0,'CC'),
                     (1,'DC'),
                     (2,'NB'))
-    lender=models.ForeignKey(Lender)
-    project= models.ForeignKey(Project)
+    lender=models.ForeignKey(Lender,related_name="lender_transactions")
+    project= models.ForeignKey(Project,related_name="project_transactions")
     timestamp=models.DateTimeField(default=timezone.now())
     amount=models.FloatField(default=0)
     payment_id=models.IntegerField(default=0)

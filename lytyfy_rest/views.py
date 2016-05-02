@@ -277,8 +277,8 @@ class ListProject(APIView):
 		for project in projects:
 			project_detail={}
 			project_detail['project_id']=project.id
-			project_detail['borrowers']=project.borrowers.all().values('first_name','last_name','avatar')
-			project_detail['lenders']=project.lenders.all().values('lender_id','lender__first_name','lender__avatar')
+			project_detail['borrowers']=project.borrowers.values('first_name','last_name','avatar')
+			project_detail['lenders']=project.lenders.values('lender_id','lender__first_name','lender__avatar')
 			project_detail['title']=project.title
 			project_detail['loan_raised']=project.raisedAmount
 			project_detail['loan_amount']=project.targetAmount
@@ -290,7 +290,10 @@ class ListProject(APIView):
 			project_detail['status']= "running" if project.offlistDate > timezone.now() else "completed"
 			project_detail['amount_to_invest']=""
 			if request.GET.get('lenderId',None):
-				project_detail['current_user_invested']=any(int(lender['lender_id']) == int(request.GET.get('lenderId')) for lender in project_detail['lenders'])
+				project_detail['current_user']={}
+				project_detail['current_user']['invested']=any(int(lender['lender_id']) == int(request.GET.get('lenderId')) for lender in project_detail['lenders'])
+				if project_detail['current_user']['invested']:
+					project_detail['current_user'].update(project.project_transactions.filter(lender_id=request.GET.get('lenderId',None)).aggregate(Sum('amount')))
 			data.append(project_detail)
 		return Response(data,status=status.HTTP_200_OK)
 
