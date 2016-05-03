@@ -27,6 +27,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+#SERVER IP
+HOST = "54.254.195.114"
 
 # Application definition
 
