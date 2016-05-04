@@ -62,7 +62,7 @@ class TransactionFormData(APIView):
 
 class TransactionFormCapture(APIView):
 	@csrf_exempt
-	# @token_required
+	@token_required
 	def post(self,request,format=None):
 		params=dict(request.data)
 		if params and params['status'][0]=="success":
@@ -81,7 +81,7 @@ class TransactionFormCapture(APIView):
 			if serializer.is_valid():
 				serializer.save()
 				Project.objects.get(pk=trasaction['project']).raiseAmount(trasaction['amount']).save()
-				LenderCurrentStatus.objects.get(lender_id=trasaction['lender'],project_id=trasaction['project']).updateCurrentStatus(trasaction['amount']).save()
+				LenderCurrentStatus.objects.get_or_create(lender_id=trasaction['lender'],project_id=trasaction['project']).updateCurrentStatus(trasaction['amount']).save()
 				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
 				return redirect("http://try.lytyfy.org/#/dashboard")
