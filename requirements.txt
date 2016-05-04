@@ -1,17 +1,7 @@
 Django==1.9.2
 Markdown==2.6.5
 MySQL-python==1.2.5
-PAM==0.4.2
-Pillow==2.3.0
-Twisted-Core==13.2.0
-Twisted-Web==13.2.0
-adium-theme-ubuntu==0.3.4
-apt-xapian-index==0.45
-argparse==1.2.1
-chardet==2.0.1
-colorama==0.2.5
 command-not-found==0.3
-debtagshw==0.1
 defer==1.0.6
 dirspec==13.10
 django-cors-headers==1.1.0
