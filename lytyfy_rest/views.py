@@ -16,6 +16,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.db.models import Sum
+from lytyfy_rest.settings.prod import HOST
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
@@ -61,7 +62,7 @@ class TransactionFormData(APIView):
 
 class TransactionFormCapture(APIView):
 	@csrf_exempt
-	# @token_required
+	@token_required
 	def post(self,request,format=None):
 		params=dict(request.data)
 		if params and params['status'][0]=="success":
@@ -80,7 +81,7 @@ class TransactionFormCapture(APIView):
 			if serializer.is_valid():
 				serializer.save()
 				Project.objects.get(pk=trasaction['project']).raiseAmount(trasaction['amount']).save()
-				LenderCurrentStatus.objects.get(lender_id=trasaction['lender'],project_id=trasaction['project']).updateCurrentStatus(trasaction['amount']).save()
+				LenderCurrentStatus.objects.get_or_create(lender_id=trasaction['lender'],project_id=trasaction['project']).updateCurrentStatus(trasaction['amount']).save()
 				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
 				return redirect("http://try.lytyfy.org/#/dashboard")
@@ -152,17 +153,31 @@ class Register(APIView):
 	@csrf_exempt
 	def get(self,request,format=None):
 		params=request.GET
-		if params['username'] is not None:
+		password = User.objects.make_random_password()
+		if params['username'] and password:
 			try:
-				user = User.objects.create_user(params['username'], None, "deviab@123")
+				user = User.objects.create_user(params['username'], None, password)
 				lender=Lender(user=user,email=user.username)
 				lender.save()
-				LenderCurrentStatus(lender=lender).save()
 				LenderWallet(lender=lender).save()
+				try:
+					subject = """Welcome to lytyfy"""
+					html_message = """
+					Dear Investor,<br><br>
+					Thank you for joining Lytyfy!<br><br>
+					Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
+					Your Lytyfy ID: """+params['username']+"""<br><br>
+					Password: """+password+"""<br><br><br>
+					Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
+					Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
+					Regards,
+					Team Lytyfy """
+					send_mail(subject,None, "support@lytyfy.org",[params['username']], fail_silently=True,html_message=html_message)
+					return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
+				except:
+					return Response({'error': 'Something went wrong while sending email , kindly manualy send email to investor'},status=status.HTTP_400_BAD_REQUEST)
 			except IntegrityError:
 				return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
-			token = Token.objects.create(user=user)
-			return Response({'token': token.token,'username': user.username},status=status.HTTP_200_OK)
 		return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
 
 class GetToken(APIView):
@@ -235,9 +250,9 @@ class RequestInvite(APIView):
 			if created:
 				try:
 					subject = """New request for invitation by """+params['email']
-					approve_link = "http://54.254.195.114/api/lender/register?username="+params['email']
+					approve_link = "http://"+HOST+"/api/lender/register?username="+params['email']
 					html_message = 'Hi Deepak, We got a new request for invitation. Click YES to approve else ignore this mail<br> <a href='+approve_link+'>YES</a>'
-					send_mail(subject,None, "support@lytyfy.org",['connect2sdeepak@gmail.com'], fail_silently=True,html_message=html_message)
+					send_mail(subject,None, "support@lytyfy.org",['dilipskumar1410@gmail.com'], fail_silently=True,html_message=html_message)
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
 				except:
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
