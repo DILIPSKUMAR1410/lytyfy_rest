@@ -313,4 +313,29 @@ class ListProject(APIView):
 		return Response(data,status=status.HTTP_200_OK)
 
 
-
+class ResetPassword(APIView):
+	def post(self,request,format=None):
+		params =request.data
+		if params:
+			user = User.objects.filter(username=params['email']).first()
+			if user:
+				password = User.objects.make_random_password()
+				user.set_password(password)
+				user.save()
+				try:
+					subject = """New Credentials"""
+					html_message = """
+					Dear Investor,<br><br>
+					Username: """+params['email']+"""<br>
+					Password: """+password+"""<br><br>
+					Regards,<br>
+					Team Lytyfy """
+					send_mail(subject,None, "support@lytyfy.org",[params['email']], fail_silently=True,html_message=html_message)
+					return Response({'msg':"New creds sent to yout registered email"},status=status.HTTP_200_OK)
+				except:
+					return Response({'error': 'Something went wrong , kindly write us at support@lytyfy.org'},status=status.HTTP_400_BAD_REQUEST)
+			else:
+				return Response({'error':"User not found"},status=status.HTTP_400_BAD_REQUEST)
+		else:
+			return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
+			
