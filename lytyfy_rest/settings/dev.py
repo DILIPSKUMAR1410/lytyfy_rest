@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '*4f*p6zb_%6*!!6do*-@_vg+pc))36%@zpiojxx786q$bve6w2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -81,7 +81,7 @@ WSGI_APPLICATION = 'lytyfy_rest.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', 
-        'NAME': 'deviab',
+        'NAME': 'develop',
         'USER': 'mrrobot',
         'PASSWORD': 'DiVaNe_47',
         'HOST': 'lytyfy-rds-dev.c4py8eplysvm.ap-southeast-1.rds.amazonaws.com',   # Or an IP Address that your DB is hosted on

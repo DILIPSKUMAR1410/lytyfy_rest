@@ -6,45 +6,51 @@ from django.views.decorators.csrf import csrf_exempt
 from lytyfy_rest.utils import token_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
-from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite
+from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite,Borrower
 import hashlib
 from random import randint
 from rest_framework import serializers
 from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect
+from django.utils import timezone
 from django.core.mail import send_mail
-
+from django.db.models import Sum
+from lytyfy_rest.settings.prod import HOST
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
-		count=LenderDeviabTransaction.objects.filter(project__id=1).values('lender').distinct().count()
-		raised=Project.objects.get(pk=1).capitalAmount
-		return Response({'backers':count,'quantum':raised},status=status.HTTP_200_OK)
+		investors=LenderDeviabTransaction.objects.all().values('lender').distinct().count()
+		raised=int(sum(Project.objects.all().values_list('raisedAmount',flat=True)))
+		borrowers=Borrower.objects.all().count()
+		return Response({'backers':investors,'quantum':raised,'borrowers':borrowers},status=status.HTTP_200_OK)
 
 class TransactionFormData(APIView):
 	@csrf_exempt
 	@token_required
 	def get(self,request,format=None):
-		if request.GET.get('amount',None) and request.GET.get('lenderId',None):
+		if request.GET.get('amount',None) and request.GET.get('lenderId',None) and request.GET.get('projectId',None):
 			try:
 				params=request.GET
 				data=Lender.objects.values('first_name','email','mobile_number').get(pk=params['lenderId'])
 				if not data['first_name'] or not data['email']  and not data['mobile_number']:
 					return Response({'error':"Please provide your profile details "},status=status.HTTP_400_BAD_REQUEST) 
+				project = Project.objects.values('title').get(pk=params['projectId'])
+				if not project:
+					return Response({'error':"Project not found"},status=status.HTTP_400_BAD_REQUEST) 
 				txnid=str(randint(100000, 999999))
-				hashing= "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + "DhamdhaPilot" + "|" + data['first_name'] + "|" + data['email'] + "|" + params['lenderId'] + "|" + "1" + "|||||||||" + "k1wOOh0b"
+				hashing= "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project['title'] + "|" + data['first_name'] + "|" + data['email'] + "|" + params['lenderId'] + "|" + params['projectId'] + "|||||||||" + "k1wOOh0b"
 				response={}
 				response['firstname']=data['first_name']
 				response['email']=data['email']
 				response['phone']=data['mobile_number']
 				response['key']="vz70Zb"
-			  	response['productinfo']= "DhamdhaPilot"
+			  	response['productinfo']= project['title']
 			  	response['service_provider']="payu_paisa"
 			  	response['hash']=  hashlib.sha512(hashing).hexdigest()
 			  	response['furl']= "http://54.254.195.114/api/formcapture"
 			  	response['surl']= "http://54.254.195.114/api/formcapture"
-			  	response['udf2']= 1
+			  	response['udf2']= params['projectId']
 			  	response['udf1']= params['lenderId']
 			  	response['amount']= params['amount']
 			  	response['txnid']= txnid
@@ -56,7 +62,7 @@ class TransactionFormData(APIView):
 
 class TransactionFormCapture(APIView):
 	@csrf_exempt
-	# @token_required
+	@token_required
 	def post(self,request,format=None):
 		params=dict(request.data)
 		if params and params['status'][0]=="success":
@@ -74,8 +80,8 @@ class TransactionFormCapture(APIView):
 			serializer=LenderDeviabTransactionSerializer(data=trasaction)
 			if serializer.is_valid():
 				serializer.save()
-				Project.objects.get(pk=trasaction['project']).creditCapitalAmount(trasaction['amount']).save()
-				LenderCurrentStatus.objects.get(lender__id=trasaction['lender']).updateCurrentStatus(trasaction['amount']).save()
+				Project.objects.get(pk=trasaction['project']).raiseAmount(trasaction['amount']).save()
+				LenderCurrentStatus.objects.get_or_create(lender_id=trasaction['lender'],project_id=trasaction['project']).updateCurrentStatus(trasaction['amount']).save()
 				return redirect("http://try.lytyfy.org/#/dashboard")
 			else:
 				return redirect("http://try.lytyfy.org/#/dashboard")
@@ -97,22 +103,33 @@ class GetLenderInvestmentDetail(APIView):
 	@csrf_exempt
 	@token_required
 	def get(self,request,pk,format=None):
-		
-		investmentDetails=LenderCurrentStatus.objects.values('principal_repaid','interest_repaid','emr').get(lender__id=pk)
-		investmentDetails['credits']=LenderWallet.objects.values_list('balance').get(lender__id=pk)[0]
-		investmentDetails['transactions']=LenderDeviabTransaction.objects.filter(project__id=1,lender__id=pk).values('amount','payment_id','timestamp')
+		data={}
+		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
+		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title')
+		map_data=ldt.values('project__title').annotate(investment = Sum('amount'))
 		totalInvestment=0
-		for transaction in investmentDetails['transactions']:
+		for transaction in data['transactions']:
 			transaction['type']="debit"
 			transaction['timestamp']=transaction['timestamp'].strftime("%d, %b %Y | %r")
 			totalInvestment+=transaction['amount']
-		investmentDetails['totalInvestment']=totalInvestment	
-		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender__id=pk).values('amount')
+		data['totalInvestment']=totalInvestment	
+		data['investmentDetails']=LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','interest_repaid','emr','project__title')
+		totalPrincipalRepaid=totalInterestRepaid=totalEmr=0
+		for investmentDetail in data['investmentDetails']:
+			totalPrincipalRepaid+=investmentDetail['principal_repaid']
+			totalInterestRepaid+=investmentDetail['interest_repaid']
+			totalEmr+=investmentDetail['emr']			
+			investmentDetail['investment']=[item['investment'] for item in map_data if item["project__title"] == investmentDetail["project__title"]][0]		
+		data['totalPrincipalRepaid']=totalPrincipalRepaid
+		data['totalInterestRepaid']=totalInterestRepaid
+		data['totalEmr']=totalEmr
+		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
+		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender_id=pk).values('amount')
 		totalWithdrawal=0
 		for withdraw in totalAmountWithdraw:
 			totalWithdrawal+=withdraw['amount']
-		investmentDetails['totalWithdrawal']=totalWithdrawal
-		return Response(investmentDetails,status=status.HTTP_200_OK)
+		data['totalWithdrawal']=totalWithdrawal
+		return Response(data,status=status.HTTP_200_OK)
 		
 
 
@@ -136,17 +153,31 @@ class Register(APIView):
 	@csrf_exempt
 	def get(self,request,format=None):
 		params=request.GET
-		if params['username'] is not None:
+		password = User.objects.make_random_password()
+		if params['username'] and password:
 			try:
-				user = User.objects.create_user(params['username'], None, "deviab@123")
+				user = User.objects.create_user(params['username'], None, password)
 				lender=Lender(user=user,email=user.username)
 				lender.save()
-				LenderCurrentStatus(lender=lender).save()
 				LenderWallet(lender=lender).save()
+				try:
+					subject = """Welcome to lytyfy"""
+					html_message = """
+					Dear Investor,<br><br>
+					Thank you for joining Lytyfy!<br><br>
+					Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
+					Your Lytyfy ID: """+params['username']+"""<br><br>
+					Password: """+password+"""<br><br><br>
+					Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
+					Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
+					Regards,
+					Team Lytyfy """
+					send_mail(subject,None, "support@lytyfy.org",[params['username']], fail_silently=True,html_message=html_message)
+					return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
+				except:
+					return Response({'error': 'Something went wrong while sending email , kindly manualy send email to investor'},status=status.HTTP_400_BAD_REQUEST)
 			except IntegrityError:
 				return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
-			token = Token.objects.create(user=user)
-			return Response({'token': token.token,'username': user.username},status=status.HTTP_200_OK)
 		return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
 
 class GetToken(APIView):
@@ -194,7 +225,6 @@ class LenderWithdrawRequest(APIView):
 			params['lender']=pk
 			serializer=LenderWithdrawalRequestSerializer(data=params)
 			serializer.is_valid()
-			print serializer.errors
 			if serializer.is_valid():
 				serializer.save()
 				return Response({'message':"Request Send"},status=status.HTTP_200_OK)
@@ -220,9 +250,9 @@ class RequestInvite(APIView):
 			if created:
 				try:
 					subject = """New request for invitation by """+params['email']
-					approve_link = "http://54.254.195.114/api/lender/register?username="+params['email']
+					approve_link = "http://"+HOST+"/api/lender/register?username="+params['email']
 					html_message = 'Hi Deepak, We got a new request for invitation. Click YES to approve else ignore this mail<br> <a href='+approve_link+'>YES</a>'
-					send_mail(subject,None, "support@lytyfy.org",['connect2sdeepak@gmail.com'], fail_silently=True,html_message=html_message)
+					send_mail(subject,None, "support@lytyfy.org",['dilipskumar1410@gmail.com'], fail_silently=True,html_message=html_message)
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
 				except:
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
@@ -252,6 +282,60 @@ class ChangePassword(APIView):
 				return Response({'error':"lender not found"},status=status.HTTP_400_BAD_REQUEST)
 		else:
 			return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class ListProject(APIView):
+	def get(self, request,format=None):
+		projects=Project.objects.all()
+		data=[]
+		for project in projects:
+			project_detail={}
+			project_detail['project_id']=project.id
+			project_detail['borrowers']=project.borrowers.values('first_name','last_name','avatar')
+			project_detail['lenders']=project.lenders.values('lender_id','lender__first_name','lender__avatar')
+			project_detail['title']=project.title
+			project_detail['loan_raised']=project.raisedAmount
+			project_detail['loan_amount']=project.targetAmount
+			project_detail['place']=project.place
+			project_detail['description']=project.description
+			project_detail['offlistDate']=project.offlistDate
+			project_detail['repayment_term']=8
+			project_detail['repayment_schedule']="Monthly"
+			project_detail['status']= "running" if project.offlistDate > timezone.now() else "completed"
+			project_detail['amount_to_invest']=""
+			if request.GET.get('lenderId',None):
+				project_detail['current_user']={}
+				project_detail['current_user']['invested']=any(int(lender['lender_id']) == int(request.GET.get('lenderId')) for lender in project_detail['lenders'])
+				if project_detail['current_user']['invested']:
+					project_detail['current_user'].update(project.project_transactions.filter(lender_id=request.GET.get('lenderId',None)).aggregate(Sum('amount')))
+			data.append(project_detail)
+		return Response(data,status=status.HTTP_200_OK)
+
+
+class ResetPassword(APIView):
+	def post(self,request,format=None):
+		params =request.data
+		if params:
+			user = User.objects.filter(username=params['email']).first()
+			if user:
+				password = User.objects.make_random_password()
+				user.set_password(password)
+				user.save()
+				try:
+					subject = """New Credentials"""
+					html_message = """
+					Dear Investor,<br><br>
+					Username: """+params['email']+"""<br>
+					Password: """+password+"""<br><br>
+					Regards,<br>
+					Team Lytyfy """
+					send_mail(subject,None, "support@lytyfy.org",[params['email']], fail_silently=True,html_message=html_message)
+					return Response({'msg':"New creds sent to yout registered email"},status=status.HTTP_200_OK)
+				except:
+					return Response({'error': 'Something went wrong , kindly write us at support@lytyfy.org'},status=status.HTTP_400_BAD_REQUEST)
+			else:
+				return Response({'error':"User not found"},status=status.HTTP_400_BAD_REQUEST)
+		else:
+			return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
 			
-
-
