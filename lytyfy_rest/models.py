@@ -117,4 +117,4 @@ class Borrower(models.Model):
     project=models.ForeignKey(Project,related_name="borrowers",null=True,)
 
     def __unicode__(self):
-       return self.mobile_number
+       return self.first_name + " " +self.last_name
