@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '*4f*p6zb_%6*!!6do*-@_vg+pc))36%@zpiojxx786q$bve6w2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'lytyfy_rest',
     'rest_framework',
     'corsheaders',
+    's3direct',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -136,3 +137,32 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'support@lytyfy.org'
 EMAIL_HOST_PASSWORD = 'divane_47'
+
+# AWS keys
+AWS_ACCESS_KEY_ID = 'AKIAIDB6M7RJCSGQDLWQ'
+AWS_SECRET_ACCESS_KEY = 'P6SiX5ABghiDM0im4Oj+iMtDsMidG2FUhoZSIyDe'
+AWS_STORAGE_BUCKET_NAME = 'lytyfy'
+
+# The region of your bucket, more info:
+# http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
+S3DIRECT_REGION = 'ap-southeast-1'
+
+# Destinations, with the following keys:
+#
+# key [required] Where to upload the file to
+# auth [optional] An ACL function to whether the current user can perform this action
+# allowed [optional] List of allowed MIME types
+# acl [optional] Give the object another ACL rather than 'public-read'
+# cache_control [optional] Cache control headers, eg 'max-age=2592000'
+# content_disposition [optional] Useful for sending files as attachements
+# bucket [optional] Specify a different bucket for this particular object
+#
+S3DIRECT_DESTINATIONS = {
+    # Allow staff users to upload any MIME type
+    'borrower_img': {
+        'key': 'uploads/borrowers/images', 
+        'auth': lambda u: u.is_staff,
+        'allowed': ['image/jpeg', 'image/png'],
+    },
+}
+

@@ -13,11 +13,12 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url
+from django.conf.urls import url,include
 from django.contrib import admin
 from lytyfy_rest import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+    url(r'^s3direct/', include('s3direct.urls')),
     url(r'^api/homepage/$', views.HomePageApi.as_view()),
     url(r'^api/transaction/formdata$', views.TransactionFormData.as_view()),
     url(r'^api/formcapture$', views.TransactionFormCapture.as_view()),

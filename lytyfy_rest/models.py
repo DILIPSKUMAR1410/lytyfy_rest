@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 import binascii
 import os
 from django.utils import timezone
+from s3direct.fields import S3DirectField
 
 class Lender(models.Model):
     first_name = models.CharField(max_length=30)
@@ -42,6 +43,9 @@ class Project(models.Model):
     def raiseAmount(self,amount=None):
         self.raisedAmount+=amount
         return self
+
+    def __unicode__(self):
+       return self.title
 
 
 class LenderDeviabTransaction(models.Model):
@@ -85,6 +89,8 @@ class Token(models.Model):
 class Invite(models.Model):
     email = models.CharField(max_length=30)
 
+    def __unicode__(self):
+       return self.email
 
 class LenderCurrentStatus(models.Model):
     lender=models.ForeignKey(Lender,related_name="projects") 
@@ -107,5 +113,8 @@ class Borrower(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30,null=True)
     mobile_number = models.CharField(max_length=13,null=True)
-    avatar=models.CharField(max_length=30,null=True)
+    avatar= S3DirectField(dest='borrower_img',max_length=64,null=True)
     project=models.ForeignKey(Project,related_name="borrowers",null=True)
+
+    def __unicode__(self):
+       return self.mobile_number
