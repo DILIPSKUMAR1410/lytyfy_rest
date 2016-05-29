@@ -16,7 +16,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.db.models import Sum
-from lytyfy_rest.settings.prod import HOST
+from django.conf import settings
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
@@ -48,8 +48,8 @@ class TransactionFormData(APIView):
 			  	response['productinfo']= project['title']
 			  	response['service_provider']="payu_paisa"
 			  	response['hash']=  hashlib.sha512(hashing).hexdigest()
-			  	response['furl']= "http://"+HOST+"/api/formcapture"
-			  	response['surl']= "http://"+HOST+"/api/formcapture"
+			  	response['furl']= "http://"+settings.HOST+"/api/formcapture"
+			  	response['surl']= "http://"+settings.HOST+"/api/formcapture"
 			  	response['udf2']= params['projectId']
 			  	response['udf1']= params['lenderId']
 			  	response['amount']= params['amount']
@@ -250,7 +250,7 @@ class RequestInvite(APIView):
 			if created:
 				try:
 					subject = """New request for invitation by """+params['email']
-					approve_link = "http://"+HOST+"/api/lender/register?username="+params['email']
+					approve_link = "http://"+settings.HOST+"/api/lender/register?username="+params['email']
 					html_message = 'Hi Deepak, We got a new request for invitation. Click YES to approve else ignore this mail<br> <a href='+approve_link+'>YES</a>'
 					send_mail(subject,None, "support@lytyfy.org",['dilipskumar1410@gmail.com'], fail_silently=True,html_message=html_message)
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)

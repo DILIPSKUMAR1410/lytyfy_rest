@@ -112,9 +112,9 @@ class LenderCurrentStatus(models.Model):
 class Borrower(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30,null=True)
-    mobile_number = models.CharField(max_length=13,null=True)
-    avatar= S3DirectField(dest='borrower_img',max_length=64,null=True)
-    project=models.ForeignKey(Project,related_name="borrowers",null=True)
+    mobile_number = models.CharField(max_length=13,null=True,blank=True)
+    avatar= S3DirectField(dest='borrower_img',max_length=64,null=True,blank=True)
+    project=models.ForeignKey(Project,related_name="borrowers",null=True,)
 
     def __unicode__(self):
        return self.mobile_number
