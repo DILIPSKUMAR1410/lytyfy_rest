@@ -163,15 +163,15 @@ class Register(APIView):
 				try:
 					subject = """Welcome to lytyfy"""
 					html_message = """
-					Dear Investor,<br><br>
+					Dear Patron,<br><br>
 					Thank you for joining Lytyfy!<br><br>
 					Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
-					Your Lytyfy ID: """+params['username']+"""<br><br>
-					Password: """+password+"""<br><br><br>
+					<b>Your Lytyfy ID:</b> """+params['username']+"""<br><br>
+					<b>Password:</b> """+password+"""<br><br><br>
 					Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
 					Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
-					Regards,
-					Team Lytyfy """
+					Regards,<br>
+					Team Lytyfy"""
 					send_mail(subject,None, "support@lytyfy.org",[params['username']], fail_silently=True,html_message=html_message)
 					return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
 				except:
