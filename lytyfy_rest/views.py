@@ -249,10 +249,10 @@ class RequestInvite(APIView):
 			invite,created= Invite.objects.get_or_create(email=params['email'])
 			if created:
 				try:
-					subject = """New request for invitation by """+params['email']
+					subject = """New request for invitation"""
 					approve_link = "http://"+settings.HOST+"/api/lender/register?username="+params['email']
 					html_message = 'Hi Deepak, We got a new request for invitation. Click YES to approve else ignore this mail<br> <a href='+approve_link+'>YES</a>'
-					send_mail(subject,None, "support@lytyfy.org",['dilipskumar1410@gmail.com'], fail_silently=True,html_message=html_message)
+					send_mail(subject,None, "support@lytyfy.org",['deepak@lytyfy.org'], fail_silently=True,html_message=html_message)
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
 				except:
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
