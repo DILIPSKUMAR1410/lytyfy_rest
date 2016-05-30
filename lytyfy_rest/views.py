@@ -60,6 +60,7 @@ class TransactionFormData(APIView):
 			return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionFormCapture(APIView):
+	@csrf_exempt
 	def post(self,request,format=None):
 		params=dict(request.data)
 		if params and params['status'][0]=="success":
