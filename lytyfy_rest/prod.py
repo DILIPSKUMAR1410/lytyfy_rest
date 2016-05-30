@@ -28,7 +28,10 @@ DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 #SERVER IP
-HOST = "54.254.195.114"
+HOST_IP= "54.254.195.114"
+
+#SERVER DOMAIN
+HOST_DOMAIN= "api.lytyfy.org"
 
 # Application definition
 

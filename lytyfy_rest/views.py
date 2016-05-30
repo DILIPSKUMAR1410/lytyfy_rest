@@ -48,8 +48,8 @@ class TransactionFormData(APIView):
 			  	response['productinfo']= project['title']
 			  	response['service_provider']="payu_paisa"
 			  	response['hash']=  hashlib.sha512(hashing).hexdigest()
-			  	response['furl']= "http://"+settings.HOST+"/api/formcapture"
-			  	response['surl']= "http://"+settings.HOST+"/api/formcapture"
+			  	response['furl']= "http://"+settings.HOST_DOMAIN+"/api/formcapture"
+			  	response['surl']= "http://"+settings.HOST_DOMAIN+"/api/formcapture"
 			  	response['udf2']= params['projectId']
 			  	response['udf1']= params['lenderId']
 			  	response['amount']= params['amount']
@@ -250,7 +250,7 @@ class RequestInvite(APIView):
 			if created:
 				try:
 					subject = """New request for invitation"""
-					approve_link = "http://"+settings.HOST+"/api/lender/register?username="+params['email']
+					approve_link = "http://"+settings.HOST_DOMAIN+"/api/lender/register?username="+params['email']
 					html_message = 'Hi Deepak,<br><br>We got a new request for invitation from '+params['email']+'.<br>Click <a href='+approve_link+'>YES</a> to approve else ignore this mail.<br><br>Team Lytyfy'
 					send_mail(subject,None, "support@lytyfy.org",['deepak@lytyfy.org'], fail_silently=True,html_message=html_message)
 					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
