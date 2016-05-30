@@ -83,10 +83,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lytyfy_rest.wsgi.application'
 
-REST_FRAMEWORK = {
-'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
-}
-
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 

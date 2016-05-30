@@ -26,7 +26,6 @@ class HomePageApi(APIView):
 		return Response({'backers':investors,'quantum':raised,'borrowers':borrowers},status=status.HTTP_200_OK)
 
 class TransactionFormData(APIView):
-	@csrf_exempt
 	@token_required
 	def get(self,request,format=None):
 		if request.GET.get('amount',None) and request.GET.get('lenderId',None) and request.GET.get('projectId',None):
@@ -61,7 +60,6 @@ class TransactionFormData(APIView):
 			return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
 
 class TransactionFormCapture(APIView):
-	@csrf_exempt
 	@token_required
 	def post(self,request,format=None):
 		params=dict(request.data)
@@ -91,7 +89,6 @@ class TransactionFormCapture(APIView):
 
 
 class GetLenderDetail(APIView):
-	@csrf_exempt
 	@token_required
 	def get(self,request,pk,format=None):
 		try:
@@ -101,7 +98,6 @@ class GetLenderDetail(APIView):
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
 
 class GetLenderInvestmentDetail(APIView):
-	@csrf_exempt
 	@token_required
 	def get(self,request,pk,format=None):
 		data={}
@@ -135,7 +131,6 @@ class GetLenderInvestmentDetail(APIView):
 
 
 class UpdateLenderDetails(APIView):
-	@csrf_exempt
 	@token_required
 	def post(self,request,pk,format=None):
 		params=request.data
@@ -206,13 +201,13 @@ class GetToken(APIView):
 			return Response({'error': 'No Credentials found'},status=status.HTTP_400_BAD_REQUEST)
 
 class KillToken(APIView):
-	@csrf_exempt
 	@token_required
 	def get(self,request,pk=None):
 		request.token.delete()
 		return Response({'success':"Succesfully token killed"},status=status.HTTP_200_OK)
 
 class LenderWithdrawRequest(APIView):
+	@token_required
 	def post(self,request,pk,format=None):
 		balance=LenderWallet.objects.get(lender__id=pk).balance
 		if balance < 1001:
@@ -235,7 +230,6 @@ class LenderWithdrawRequest(APIView):
 			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)
 
 class VerifyToken(APIView):
-	@csrf_exempt
 	@token_required
 	def get(self,request,format=None):
 		pk=request.token.user.lender.id
@@ -264,7 +258,6 @@ class RequestInvite(APIView):
 
 
 class ChangePassword(APIView):
-	@csrf_exempt
 	@token_required
 	def post(self,request,pk,format=None):
 		params=request.data
@@ -339,4 +332,3 @@ class ResetPassword(APIView):
 				return Response({'error':"User not found"},status=status.HTTP_400_BAD_REQUEST)
 		else:
 			return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
-			
