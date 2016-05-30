@@ -33,6 +33,9 @@ HOST_IP= "54.169.235.117"
 #SERVER DOMAIN
 HOST_DOMAIN= "api.lytyfy.org"
 
+#CLIENT DOMAIN
+CLIENT_DOMAIN= "dev.lytyfy.org"
+
 # Application definition
 
 INSTALLED_APPS = [
