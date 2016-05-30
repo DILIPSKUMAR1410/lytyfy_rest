@@ -107,6 +107,7 @@ class LenderCurrentStatus(models.Model):
         il= amount *.6 / 100
         self.interest_left+=il
         self.emr=self.principal_left / self.tenure_left + self.interest_left;
+        self.save()
         return self
 
 class Borrower(models.Model):
