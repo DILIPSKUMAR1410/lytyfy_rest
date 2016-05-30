@@ -78,7 +78,8 @@ class TransactionFormCapture(APIView):
 			if serializer.is_valid():
 				serializer.save()
 				Project.objects.get(pk=trasaction['project']).raiseAmount(trasaction['amount']).save()
-				LenderCurrentStatus.objects.get_or_create(lender_id=trasaction['lender'],project_id=trasaction['project']).updateCurrentStatus(trasaction['amount'])
+				got, created = LenderCurrentStatus.objects.get_or_create(lender_id=trasaction['lender'],project_id=trasaction['project'])
+				got.updateCurrentStatus(trasaction['amount'])
 				return redirect("http://"+settings.CLIENT_DOMAIN+"/#/dashboard")
 			else:
 				return redirect("http://"+settings.CLIENT_DOMAIN+"/#/dashboard")
