@@ -69,7 +69,7 @@ class LenderDeviabTransaction(models.Model):
     notification=models.CharField(max_length=30,null=True)
 
     def __unicode__(self):
-       return self.payment_id
+       return str(self.payment_id)
 
 class Token(models.Model):
     user = models.ForeignKey(User)
