@@ -68,6 +68,8 @@ class LenderDeviabTransaction(models.Model):
     error_message=models.CharField(max_length=30,null=True)
     notification=models.CharField(max_length=30,null=True)
 
+    def __unicode__(self):
+       return self.payment_id
 
 class Token(models.Model):
     user = models.ForeignKey(User)
