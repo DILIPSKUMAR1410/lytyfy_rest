@@ -146,7 +146,6 @@ class UpdateLenderDetails(APIView):
 			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)		
 
 class Register(APIView):
-	@csrf_exempt
 	def get(self,request,format=None):
 		params=request.GET
 		password = User.objects.make_random_password()
@@ -177,7 +176,6 @@ class Register(APIView):
 		return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
 
 class GetToken(APIView):
-	@csrf_exempt
 	def post(self,request,format=None):
 		username = request.data.get('username', None)
 		password = request.data.get('password', None)
