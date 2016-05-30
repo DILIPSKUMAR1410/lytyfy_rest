@@ -11,10 +11,12 @@ def lytyfy_rest():
     env.project = 'lytyfy_rest'
     #  hg repository of your project
     env.repository = 'https://gitlab.com/deviab/lytyfy_rest.git'
+    #branch name
+    env.branch = 'master'
     #  type of repository (git or hg)
     env.repository_type = 'git'
     #  hosts to deploy your project, users must be sudoers
-    env.hosts = ['ubuntu@54.169.235.117', ]
+    env.hosts = ['ubuntu@54.254.195.114', ]
     # additional packages to be installed on the server
     env.additional_packages = [
         "libmysqlclient-dev",
@@ -69,7 +71,7 @@ def lytyfy_rest():
     ### END gunicorn settings ###
 
     ### START nginx settings ###
-    env.nginx_server_name = 'dev.api.lytyfy.org'  # Only domain name, without 'www' or 'http://'
+    env.nginx_server_name = 'api.lytyfy.org'  # Only domain name, without 'www' or 'http://'
     env.nginx_conf_file = '%(django_user_home)s/configs/nginx/%(project)s.conf' % env
     env.nginx_client_max_body_size = 10  # Maximum accepted body size of client request, in MB
     env.nginx_htdocs = '%(django_user_home)s/htdocs' % env
