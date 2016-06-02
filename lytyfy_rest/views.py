@@ -323,7 +323,7 @@ class ResetPassword(APIView):
 					Regards,<br>
 					Team Lytyfy """
 					send_mail(subject,None, "support@lytyfy.org",[params['email']], fail_silently=True,html_message=html_message)
-					return Response({'msg':"New creds sent to yout registered email"},status=status.HTTP_200_OK)
+					return Response({'msg':"New creds sent to your registered email"},status=status.HTTP_200_OK)
 				except:
 					return Response({'error': 'Something went wrong , kindly write us at support@lytyfy.org'},status=status.HTTP_400_BAD_REQUEST)
 			else:
