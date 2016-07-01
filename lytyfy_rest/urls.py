@@ -34,6 +34,7 @@ urlpatterns = [
     url(r'^api/lenders/(?P<pk>[0-9]+)/changepassword$', views.ChangePassword.as_view()),
     url(r'^api/projects/$', views.ListProject.as_view()),
     url(r'^api/resetpassword/$', views.ResetPassword.as_view()),
+    url(r'^api/repayment/$', views.RepaymentToInvestors.as_view()),
     
 
 ]
