@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.db import IntegrityError
+from django.db import transaction
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from lytyfy_rest.utils import token_required
@@ -37,7 +38,7 @@ class TransactionFormData(APIView):
 				project = Project.objects.values('title').get(pk=params['projectId'])
 				if not project:
 					return Response({'error':"Project not found"},status=status.HTTP_400_BAD_REQUEST) 
-				txnid=str(randint(100000, 999999))
+				txnid=str(randint(1000000, 9999999))
 				hashing= "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project['title'] + "|" + data['first_name'] + "|" + data['email'] + "|" + params['lenderId'] + "|" + params['projectId'] + "|||||||||" + "k1wOOh0b"
 				response={}
 				response['firstname']=data['first_name']
@@ -102,13 +103,13 @@ class GetLenderInvestmentDetail(APIView):
 	def get(self,request,pk,format=None):
 		data={}
 		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
-		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title')
+		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title','transactions_type')
 		map_data=ldt.values('project__title').annotate(investment = Sum('amount'))
 		totalInvestment=0
 		for transaction in data['transactions']:
-			transaction['type']="debit"
 			transaction['timestamp']=transaction['timestamp'].strftime("%d, %b %Y | %r")
-			totalInvestment+=transaction['amount']
+			if transaction['transactions_type'] == "debit":
+				totalInvestment+=transaction['amount']
 		data['totalInvestment']=totalInvestment	
 		data['investmentDetails']=LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','interest_repaid','emr','project__title')
 		totalPrincipalRepaid=totalInterestRepaid=totalEmr=0
@@ -330,3 +331,30 @@ class ResetPassword(APIView):
 				return Response({'error':"User not found"},status=status.HTTP_400_BAD_REQUEST)
 		else:
 			return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
+
+class RepaymentToInvestors(APIView):
+	@transaction.atomic
+	def get(self, request,format=None):
+		if request.GET.get('amount',None) and request.GET.get('project_id',None):
+			amount = float(request.GET.get('amount',None))
+			project_id = request.GET.get('project_id',None)
+			lenders=LenderCurrentStatus.objects.filter(project=project_id)
+			tmr = lenders.aggregate(Sum('emr'))
+			for lender in lenders:
+				share = round(amount * lender.emr/tmr['emr__sum'],2)
+				trasaction={}
+				trasaction['lender']=lender.lender.id
+				trasaction['project']=lender.project.id
+				trasaction['amount']=share
+				trasaction['payment_id']=randint(11111111, 99999999)
+				trasaction['transactions_type']="credit"
+				serializer=LenderDeviabTransactionSerializer(data=trasaction)
+				if serializer.is_valid():
+					serializer.save()
+					lender.FMI_paid(share)
+					lender.lender.wallet.credit(share)
+				else:
+					return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
+			return Response({'msg':"Succesfully wallet credited"},status=status.HTTP_200_OK)	
+
+			

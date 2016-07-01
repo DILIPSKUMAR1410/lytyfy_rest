@@ -14,15 +14,20 @@ class Lender(models.Model):
     avatar=models.CharField(max_length=30,null=True)
 
 class LenderWallet(models.Model):
-    lender=models.OneToOneField(Lender)
-    balance=models.FloatField(default=0)
+    balance=models.FloatField(default=0.0)
+    lender=models.OneToOneField(Lender,related_name="wallet")
+    
+    def credit(self,amount):
+        self.balance += amount
+        self.save()
+
 
 class LenderWithdrawalRequest(models.Model):
     STATUS_CHOICES=((0,'Processing'),
                     (1,'Completed'),
                     (2,'Pending'))
     lender=models.ForeignKey(Lender)
-    amount=models.FloatField(default=0)
+    amount=models.FloatField(default=0.0)
     requested_at=models.DateTimeField(default=timezone.now())
     account_number=models.CharField(max_length=30)
     ifsc_code=models.CharField(max_length=30)
@@ -33,8 +38,8 @@ class LenderWithdrawalRequest(models.Model):
 
 class Project(models.Model):
     title=models.CharField(max_length=30)
-    raisedAmount=models.FloatField(default=0)
-    targetAmount=models.FloatField(default=0)
+    raisedAmount=models.FloatField(default=0.0)
+    targetAmount=models.FloatField(default=0.0)
     place=models.CharField(max_length=30)
     description=models.TextField()
     enlistDate=models.DateTimeField(default=timezone.now())
@@ -55,18 +60,19 @@ class LenderDeviabTransaction(models.Model):
     lender=models.ForeignKey(Lender,related_name="lender_transactions")
     project= models.ForeignKey(Project,related_name="project_transactions")
     timestamp=models.DateTimeField(default=timezone.now())
-    amount=models.FloatField(default=0)
+    amount=models.FloatField(default=0.0)
     payment_id=models.IntegerField(default=0)
-    status=models.CharField(max_length=30)
-    payment_mode=models.IntegerField(choices=PAYMENT_CHOICES)
-    customer_email=models.CharField(max_length=30)
-    customer_phone=models.CharField(max_length=30)
-    customer_name=models.CharField(max_length=30)
+    status=models.CharField(max_length=30,null=True)
+    payment_mode=models.IntegerField(choices=PAYMENT_CHOICES,null=True)
+    customer_email=models.CharField(max_length=30,null=True)
+    customer_phone=models.CharField(max_length=30,null=True)
+    customer_name=models.CharField(max_length=30,null=True)
     product_info=models.CharField(max_length=30,null=True)
-    additional_charges=models.FloatField(default=0,null=True)
+    additional_charges=models.FloatField(default=0.0,null=True)
     split_info=models.CharField(max_length=255,null=True)
     error_message=models.CharField(max_length=30,null=True)
     notification=models.CharField(max_length=30,null=True)
+    transactions_type=models.CharField(max_length=30)
 
     def __unicode__(self):
        return str(self.payment_id)
@@ -96,21 +102,59 @@ class Invite(models.Model):
 
 class LenderCurrentStatus(models.Model):
     lender=models.ForeignKey(Lender,related_name="projects") 
-    principal_repaid=models.FloatField(default=0)
-    interest_repaid=models.FloatField(default=0)
-    principal_left=models.FloatField(default=0)
-    interest_left=models.FloatField(default=0)
-    tenure_left=models.FloatField(default=8)
-    emr=models.FloatField(default=0)
+    principal_repaid=models.FloatField(default=0.0)
+    interest_repaid=models.FloatField(default=0.0)
+    principal_left=models.FloatField(default=0.0)
+    interest_left=models.FloatField(default=0.0)
+    emr=models.FloatField(default=0.0)
+    tenure_left=models.IntegerField(default=8)
     project=models.ForeignKey(Project,related_name="lenders")
 
     def updateCurrentStatus(self,amount):
         self.principal_left+=amount
         il= amount *.6 / 100
         self.interest_left+=il
-        self.emr=self.principal_left / self.tenure_left + self.interest_left;
+        self.emr=self.principal_left / self.tenure_left + self.interest_left
+
+        #remove after floating issue resolved
+        self.interest_left = round(self.interest_left,2)
+        self.emr = round(self.emr,2)
+        self.principal_left = round(self.principal_left,2)
+        
         self.save()
         return self
+
+    def FMI_paid(self,amount):
+        if amount < self.interest_left:
+            self.interest_left -= amount 
+            self.interest_left +=  self.principal_left *.6 / 100  
+            self.interest_repaid += amount
+            self.tenure_left -= 1
+            self.emr = self.principal_left / self.tenure_left + self.interest_left
+
+            #remove after floating issue resolved
+            self.interest_left = round(self.interest_left,2)
+            self.interest_repaid = round(self.interest_repaid,2)
+            self.emr = round(self.emr,2)
+
+            self.save()
+        else:
+            self.principal_left -= (amount - self.interest_left)
+            self.interest_repaid += self.interest_left
+            self.principal_repaid += (amount - self.interest_left)
+            self.interest_left = self.principal_left *.6 / 100  
+            self.tenure_left -= 1
+            self.emr = self.principal_left / self.tenure_left + self.interest_left
+
+            #remove after floating issue resolved
+            self.interest_left = round(self.interest_left,2)
+            self.interest_repaid = round(self.interest_repaid,2)
+            self.emr = round(self.emr,2)
+            self.principal_left = round(self.principal_left,2)
+            self.principal_repaid = round(self.principal_repaid,2)
+            
+            self.save()
+
 
 class Borrower(models.Model):
     first_name = models.CharField(max_length=30)
