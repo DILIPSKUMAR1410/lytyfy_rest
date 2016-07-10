@@ -103,7 +103,7 @@ class GetLenderInvestmentDetail(APIView):
 	def get(self,request,pk,format=None):
 		data={}
 		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
-		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title','transactions_type')
+		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')
 		map_data=ldt.filter(transactions_type="debit").values('project__title').annotate(investment = Sum('amount'))
 		totalInvestment=0
 		for transaction in data['transactions']:
