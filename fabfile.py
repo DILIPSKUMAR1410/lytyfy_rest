@@ -71,13 +71,13 @@ def lytyfy_rest():
     ### END gunicorn settings ###
 
     ### START nginx settings ###
-    env.nginx_server_name = 'dev.api.lytyfy.org'  # Only domain name, without 'www' or 'http://'
+    env.nginx_server_name = 'dev-api.lytyfy.org'  # Only domain name, without 'www' or 'http://'
     env.nginx_conf_file = '%(django_user_home)s/configs/nginx/%(project)s.conf' % env
     env.nginx_client_max_body_size = 10  # Maximum accepted body size of client request, in MB
     env.nginx_htdocs = '%(django_user_home)s/htdocs' % env
     # will configure nginx with ssl on, your certificate must be installed
     # more info here: http://wiki.nginx.org/HttpSslModule
-    env.nginx_https = False
+    env.nginx_https = True
     ### END nginx settings ###
 
     ### START supervisor settings ###
