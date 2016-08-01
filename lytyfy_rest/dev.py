@@ -31,7 +31,7 @@ ALLOWED_HOSTS = ['*']
 HOST_IP= "54.169.235.117"
 
 #SERVER DOMAIN
-HOST_DOMAIN= "dev.api.lytyfy.org"
+HOST_DOMAIN= "dev-api.lytyfy.org"
 
 #CLIENT DOMAIN
 CLIENT_DOMAIN= "dev.lytyfy.org"
