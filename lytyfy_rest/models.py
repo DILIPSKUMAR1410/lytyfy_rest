@@ -6,12 +6,18 @@ from django.utils import timezone
 from s3direct.fields import S3DirectField
 
 class Lender(models.Model):
+
+    GENDER_CHOICES=((0,'Male'),
+                    (1,'Female'),
+                    (2,'Other'))
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30,null=True)
     mobile_number = models.CharField(max_length=13,null=True)
     email = models.CharField(max_length=30,null=True)
     user=models.OneToOneField(User,related_name='lender')
     avatar=models.CharField(max_length=30,null=True)
+    gender = models.IntegerField(choices=GENDER_CHOICES,null=True)
+    dob = models.CharField(max_length=30,null=True)
 
 class LenderWallet(models.Model):
     balance=models.FloatField(default=0.0)
@@ -96,7 +102,8 @@ class Token(models.Model):
 
 class Invite(models.Model):
     email = models.CharField(max_length=30)
-
+    uid = models.CharField(max_length=30,null=True)
+    is_verified = models.BooleanField(default=False)
     def __unicode__(self):
        return self.email
 

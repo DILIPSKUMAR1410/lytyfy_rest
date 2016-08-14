@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite,Borrower
 import hashlib
+import requests
 from random import randint
 from rest_framework import serializers
 from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
@@ -147,33 +148,40 @@ class UpdateLenderDetails(APIView):
 			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)		
 
 class Register(APIView):
-	def get(self,request,format=None):
-		params=request.GET
-		password = User.objects.make_random_password()
+	def post(self,request,format=None):
+		params=request.data
+		password = params['password']
+		uid = params['uid']
 		if params['username'] and password:
-			try:
-				user = User.objects.create_user(params['username'], None, password)
-				lender=Lender(user=user,email=user.username)
-				lender.save()
-				LenderWallet(lender=lender).save()
+			invite = Invite.objects.filter(email=params['username'],uid=uid,is_verified=false).first()
+			if invite:
+				invite.is_verified = True
+				invite.save()
 				try:
-					subject = """Welcome to lytyfy"""
-					html_message = """
-					Dear Patron,<br><br>
-					Thank you for joining Lytyfy!<br><br>
-					Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
-					<b>Your Lytyfy ID:</b> """+params['username']+"""<br><br>
-					<b>Password:</b> """+password+"""<br><br><br>
-					Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
-					Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
-					Regards,<br>
-					Team Lytyfy"""
-					send_mail(subject,None, "support@lytyfy.org",[params['username']], fail_silently=True,html_message=html_message)
-					return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
-				except:
-					return Response({'error': 'Something went wrong while sending email , kindly manualy send email to investor'},status=status.HTTP_400_BAD_REQUEST)
-			except IntegrityError:
-				return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
+					user = User.objects.create_user(params['username'], None, password)
+					lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
+					lender.save()
+					LenderWallet(lender=lender).save()
+					try:
+						subject = """Welcome to lytyfy"""
+						html_message = """
+						Dear Patron,<br><br>
+						Thank you for joining Lytyfy!<br><br>
+						Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
+						<b>Your Lytyfy ID:</b> """+params['username']+"""<br><br>
+						<b>Password:</b> """+password+"""<br><br><br>
+						Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
+						Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
+						Regards,<br>
+						Team Lytyfy"""
+						send_mail(subject,None, "support@lytyfy.org",[params['username']], fail_silently=True,html_message=html_message)
+						return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
+					except:
+						return Response({'error': 'Something went wrong while sending email , kindly manualy send email to investor'},status=status.HTTP_400_BAD_REQUEST)
+				except IntegrityError:
+					return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
+			else:
+				return Response({'error': 'CANT ACCESS WITHOUT INVITATION OR ALREADY REGISTERED '},status=status.HTTP_401_UNAUTHORIZED)
 		return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
 
 class GetToken(APIView):
@@ -238,22 +246,20 @@ class VerifyToken(APIView):
 
 class RequestInvite(APIView):
 	def post(self,request,format=None):
-		params =request.data
-		if params:
-			invite,created= Invite.objects.get_or_create(email=params['email'])
+		email =request.data.get('email',None)
+		if email:
+			invite,created=Invite.objects.get_or_create(email=email)
 			if created:
-				try:
-					subject = """New request for invitation"""
-					approve_link = "http://"+settings.HOST_DOMAIN+"/api/lender/register?username="+params['email']
-					html_message = 'Hi Deepak,<br><br>We got a new request for invitation from '+params['email']+'.<br>Click <a href='+approve_link+'>YES</a> to approve else ignore this mail.<br><br>Team Lytyfy'
-					send_mail(subject,None, "support@lytyfy.org",['deepak@lytyfy.org'], fail_silently=True,html_message=html_message)
-					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
-				except:
-					return Response({'message':" Invite will be sent to your Email"},status=status.HTTP_200_OK)
-			else:
-				return Response({'message':"Email is already registered"},status=status.HTTP_200_OK)
-		else:
-			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)
+				import uuid
+				uid = uuid.uuid4().hex
+				invite.uid = uid
+				invite.save()
+				subject = """New Register"""
+				html_message = "http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
+				send_mail(subject,None, "support@lytyfy.org",[resp['email']], fail_silently=True,html_message=html_message)
+				return Response({'msg':"Check your email for registration link"},status=status.HTTP_200_OK)
+			return Response({'msg':"Email already exists"},status=status.HTTP_200_OK)
+		return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
 
 
 class ChangePassword(APIView):
@@ -358,3 +364,37 @@ class RepaymentToInvestors(APIView):
 			return Response({'msg':"Succesfully wallet credited"},status=status.HTTP_200_OK)	
 
 			
+class FBToken(APIView):
+	def post(self, request,format=None):
+		if request.data.get('access_token'):
+			from open_facebook.api import OpenFacebook
+			facebook = OpenFacebook(request.data.get('access_token'))
+			resp = facebook.get('me', fields='id,email')
+			
+			if resp['email']:
+				user = User.objects.filter(username=resp['email']).first()
+				if user:
+					token_exist = Token.objects.filter(user=user)
+					if token_exist:
+						token=token_exist.first().token
+						return Response({'token': token,'username': user.username},status=status.HTTP_200_OK)
+					else:
+						Token(user=user).save()
+						new_token = Token.objects.filter(user=user).first().token
+						return Response({'token': new_token,'username': user.username},status=status.HTTP_200_OK)
+				else:
+					invite,created=Invite.objects.get_or_create(email=resp['email'])
+					if created:
+						import uuid
+						uid = uuid.uuid4().hex
+						invite.uid = uid
+						invite.save()
+						subject = """New Register"""
+						html_message = "http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
+						send_mail(subject,None, "support@lytyfy.org",[resp['email']], fail_silently=True,html_message=html_message)
+						return Response({'msg':"Check your email for registration link"},status=status.HTTP_200_OK)
+					return Response({'msg':"Email already exists"},status=status.HTTP_200_OK)	
+			else:
+				return Response({'msg':"Email not available"},status=status.HTTP_200_OK)	
+		return Response({'msg':"token not found"},status=status.HTTP_400_BAD_REQUEST)	
+
