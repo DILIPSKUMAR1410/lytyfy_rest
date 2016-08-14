@@ -9,7 +9,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite,Borrower
 import hashlib
-import requests
 from random import randint
 from rest_framework import serializers
 from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
