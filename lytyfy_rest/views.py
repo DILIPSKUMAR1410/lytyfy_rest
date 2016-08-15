@@ -255,7 +255,7 @@ class RequestInvite(APIView):
 				invite.save()
 				subject = """New Register"""
 				html_message = "http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
-				send_mail(subject,None, "support@lytyfy.org",[email, fail_silently=True,html_message=html_message)
+				send_mail(subject,None, "support@lytyfy.org",[email], fail_silently=True,html_message=html_message)
 				return Response({'msg':"Check your email for registration link"},status=status.HTTP_200_OK)
 			return Response({'msg':"Email already exists"},status=status.HTTP_200_OK)
 		return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
