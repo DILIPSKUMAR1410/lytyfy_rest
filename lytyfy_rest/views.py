@@ -158,6 +158,8 @@ class Register(APIView):
 				invite.save()
 				try:
 					user = User.objects.create_user(params['email'], None, password)
+					user.is_active = False
+					user.save()
 					lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
 					lender.save()
 					LenderWallet(lender=lender).save()
