@@ -152,7 +152,7 @@ class Register(APIView):
 		password = params['password']
 		uid = params['uid']
 		if params['email'] and password and uid:
-			invite = Invite.objects.filter(email=params['email'],uid=uid,is_verified=false).first()
+			invite = Invite.objects.filter(email=params['email'],uid=uid,is_verified=False).first()
 			if invite:
 				invite.is_verified = True
 				invite.save()
