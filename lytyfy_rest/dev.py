@@ -175,8 +175,5 @@ S3DIRECT_DESTINATIONS = {
 FACEBOOK_APP_ID = "189201174829529"
 FACEBOOK_APP_SECRET = "0566db82c09c5ae509f7c83bcca3b2c4"
 
-AUTHENTICATION_BACKENDS = (
-    'django_facebook.auth_backends.FacebookBackend'
-)
 
 
