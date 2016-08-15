@@ -151,13 +151,13 @@ class Register(APIView):
 		params=request.data
 		password = params['password']
 		uid = params['uid']
-		if params['username'] and password and uid:
-			invite = Invite.objects.filter(email=params['username'],uid=uid,is_verified=false).first()
+		if params['email'] and password and uid:
+			invite = Invite.objects.filter(email=params['email'],uid=uid,is_verified=false).first()
 			if invite:
 				invite.is_verified = True
 				invite.save()
 				try:
-					user = User.objects.create_user(params['username'], None, password)
+					user = User.objects.create_user(params['email'], None, password)
 					lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
 					lender.save()
 					LenderWallet(lender=lender).save()
@@ -167,13 +167,13 @@ class Register(APIView):
 						Dear Patron,<br><br>
 						Thank you for joining Lytyfy!<br><br>
 						Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
-						<b>Your Lytyfy ID:</b> """+params['username']+"""<br><br>
+						<b>Your Lytyfy ID:</b> """+params['email']+"""<br><br>
 						<b>Password:</b> """+password+"""<br><br><br>
 						Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
 						Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
 						Regards,<br>
 						Team Lytyfy"""
-						send_mail(subject,None, "support@lytyfy.org",[params['username']], fail_silently=True,html_message=html_message)
+						send_mail(subject,None, "support@lytyfy.org",[params['email']], fail_silently=True,html_message=html_message)
 						return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
 					except:
 						return Response({'error': 'Something went wrong while sending email , kindly manualy send email to investor'},status=status.HTTP_400_BAD_REQUEST)
