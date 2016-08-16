@@ -102,7 +102,7 @@ class Token(models.Model):
 
 class Invite(models.Model):
     email = models.CharField(max_length=30)
-    uid = models.CharField(max_length=30,null=True)
+    uid = models.CharField(max_length=32,null=True)
     is_verified = models.BooleanField(default=False)
     def __unicode__(self):
        return self.email
