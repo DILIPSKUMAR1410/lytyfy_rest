@@ -424,7 +424,7 @@ class FBToken(APIView):
 								      {  
 								         "to":[  
 								            {  
-								               "email":email
+								               "email":resp['email']
 								            }
 								         ],
 								         "substitutions":{  
