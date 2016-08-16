@@ -63,6 +63,7 @@ class TransactionFormData(APIView):
 
 class TransactionFormCapture(APIView):
 	@csrf_exempt
+	@transaction.atomic
 	def post(self,request,format=None):
 		params=dict(request.data)
 		if params and params['status'][0]=="success":
@@ -134,6 +135,7 @@ class GetLenderInvestmentDetail(APIView):
 
 class UpdateLenderDetails(APIView):
 	@token_required
+	@transaction.atomic
 	def post(self,request,pk,format=None):
 		params=request.data
 		if params:
@@ -148,6 +150,7 @@ class UpdateLenderDetails(APIView):
 			return Response({'error':"No parameters found"},status=status.HTTP_400_BAD_REQUEST)		
 
 class Register(APIView):
+	@transaction.atomic
 	def post(self,request,format=None):
 		params=request.data
 		password = "XYZ"
@@ -226,6 +229,7 @@ class KillToken(APIView):
 
 class LenderWithdrawRequest(APIView):
 	@token_required
+	@transaction.atomic
 	def post(self,request,pk,format=None):
 		balance=LenderWallet.objects.get(lender__id=pk).balance
 		if balance < 1001:
@@ -256,6 +260,7 @@ class VerifyToken(APIView):
 		
 
 class RequestInvite(APIView):
+	@transaction.atomic
 	def post(self,request,format=None):
 		email =request.data.get('email',None)
 		if email:
@@ -275,6 +280,7 @@ class RequestInvite(APIView):
 
 class ChangePassword(APIView):
 	@token_required
+	@transaction.atomic
 	def post(self,request,pk,format=None):
 		params=request.data
 		if params:
@@ -376,6 +382,7 @@ class RepaymentToInvestors(APIView):
 
 			
 class FBToken(APIView):
+	@transaction.atomic
 	def post(self, request,format=None):
 		if request.data.get('access_token'):
 			from open_facebook.api import OpenFacebook
@@ -411,6 +418,7 @@ class FBToken(APIView):
 
 
 class VerifyInvestor(APIView):
+	@transaction.atomic
 	def get(self, request,format=None):
 		lender_id = request.GET.get('uid',None)
 		if lender_id:
