@@ -150,7 +150,7 @@ class UpdateLenderDetails(APIView):
 class Register(APIView):
 	def post(self,request,format=None):
 		params=request.data
-		password = params['password']
+		password = "XYZ"
 		uid = params['uid']
 		if params['email'] and password and uid:
 			invite = Invite.objects.filter(email=params['email'],uid=uid,is_verified=False).first()
