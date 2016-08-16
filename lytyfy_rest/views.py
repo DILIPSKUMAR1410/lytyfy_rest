@@ -184,12 +184,6 @@ class Register(APIView):
 						   "from":{  
 						      "email":"support@lytyfy.org"
 						   },
-						   "content":[  
-						      {  
-						         "type":"text/html",
-						         "value":"Hello, Email!"
-						      }
-						   ],
 						   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
 						}
 				response = sg.client.mail.send.post(request_body=data)
@@ -276,7 +270,7 @@ class RequestInvite(APIView):
 						      {  
 						         "to":[  
 						            {  
-						               "email":"jsmith503@gmail.com"
+						               "email":email
 						            }
 						         ],
 						         "substitutions":{  
@@ -287,7 +281,7 @@ class RequestInvite(APIView):
 						   "from":{  
 						      "email":"support@lytyfy.org"
 						   },
-						   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
+						   "template_id": "8dfdcd2d-fd68-4b67-9237-2095184817aa"  
 						}
 				response = sg.client.mail.send.post(request_body=data)
 				return Response({'msg':"Check your email for registration link"},status=status.HTTP_200_OK)
@@ -468,12 +462,6 @@ class VerifyInvestor(APIView):
 							   "from":{  
 							      "email":"support@lytyfy.org"
 							   },
-							   "content":[  
-							      {  
-							         "type":"text/html",
-							         "value":"Hello, Email!"
-							      }
-							   ],
 							   "template_id": "23fc3054-9d34-462f-91a3-830e7d340ace"  
 							}
 					response = sg.client.mail.send.post(request_body=data)
