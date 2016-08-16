@@ -190,6 +190,7 @@ class Register(APIView):
 							   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
 							}
 					response = sg.client.mail.send.post(request_body=data)
+					return Response({'message':"Sent for verification"},status=status.HTTP_200_OK)
 				except:
 					return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
 			else:
