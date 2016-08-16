@@ -177,7 +177,7 @@ class Register(APIView):
 						         ],
 						         "substitutions":{  
 						            "-email-":lender.email,
-						            "-link-":"http://"+settings.HOST_DOMAIN+"api/lender/verify/?="+lender.id
+						            "-link-":"http://"+settings.HOST_DOMAIN+"api/lender/verify/?="+str(lender.id)
 						         }
 						      }
 						   ],
