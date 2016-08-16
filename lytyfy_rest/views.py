@@ -270,9 +270,26 @@ class RequestInvite(APIView):
 				uid = uuid.uuid4().hex
 				invite.uid = uid
 				invite.save()
-				subject = """New Register"""
-				html_message = "http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
-				send_mail(subject,None, "support@lytyfy.org",[email], fail_silently=True,html_message=html_message)
+				sg = sendgrid.SendGridAPIClient(apikey="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")
+				data = {  
+						   "personalizations":[  
+						      {  
+						         "to":[  
+						            {  
+						               "email":"jsmith503@gmail.com"
+						            }
+						         ],
+						         "substitutions":{  
+						            "-link-":"http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
+						         }
+						      }
+						   ],
+						   "from":{  
+						      "email":"support@lytyfy.org"
+						   },
+						   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
+						}
+				response = sg.client.mail.send.post(request_body=data)
 				return Response({'msg':"Check your email for registration link"},status=status.HTTP_200_OK)
 			return Response({'msg':"Email already exists"},status=status.HTTP_200_OK)
 		return Response({'error':"Invalid request"},status=status.HTTP_400_BAD_REQUEST)
