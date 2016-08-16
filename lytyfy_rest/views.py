@@ -420,7 +420,7 @@ class FBToken(APIView):
 class VerifyInvestor(APIView):
 	@transaction.atomic
 	def get(self, request,format=None):
-		lender_id = request.GET.get('uid',None)
+		lender_id = request.GET.get('lender_id',None)
 		if lender_id:
 			lender = Lender.objects.filter(id=lender_id).first()
 			if lender:
