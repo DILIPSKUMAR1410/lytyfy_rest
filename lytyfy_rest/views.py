@@ -424,9 +424,43 @@ class VerifyInvestor(APIView):
 		if lender_id:
 			lender = Lender.objects.filter(id=lender_id).first()
 			if lender:
-				lender.user.is_active = True
-				lender.user.save()
-				return Response({'msg':"Investor account sucessfully created"},status=status.HTTP_200_OK)
+				auth_user=lender.user
+				auth_user.is_active = True
+				auth_user.save()
+				hash_password = auth_user.password
+				flag=check_password("XYZ",hash_password)
+				if flag:
+					password = User.objects.make_random_password()
+					auth_user.set_password(password)
+					auth_user.save()
+					sg = sendgrid.SendGridAPIClient(apikey="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")
+					data = {  
+							   "personalizations":[  
+							      {  
+							         "to":[  
+							            {  
+							               "email":lender.email
+							            }
+							         ],
+							         "substitutions":{  
+							            "-username-":lender.email,
+							            "-password-":password
+							         }
+							      }
+							   ],
+							   "from":{  
+							      "email":"support@lytyfy.org"
+							   },
+							   "content":[  
+							      {  
+							         "type":"text/html",
+							         "value":"Hello, Email!"
+							      }
+							   ],
+							   "template_id": "23fc3054-9d34-462f-91a3-830e7d340ace"  
+							}
+					response = sg.client.mail.send.post(request_body=data)
+					return Response({'msg':"Investor account sucessfully created"},status=status.HTTP_200_OK)
 			else:
 				return Response({'msg':"lender not found"},status=status.HTTP_400_BAD_REQUEST)	
 		return Response({'msg':"Invalid Request"},status=status.HTTP_400_BAD_REQUEST)	
