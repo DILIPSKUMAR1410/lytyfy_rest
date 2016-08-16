@@ -157,43 +157,40 @@ class Register(APIView):
 			if invite:
 				invite.is_verified = True
 				invite.save()
-				try:
-					user = User.objects.create_user(params['email'], None, password)
-					user.is_active = False
-					user.save()
-					lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
-					lender.save()
-					LenderWallet(lender=lender).save()
-					sg = sendgrid.SendGridAPIClient(apikey="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")
-					data = {  
-							   "personalizations":[  
-							      {  
-							         "to":[  
-							            {  
-							               "email":"jsmith503@gmail.com"
-							            }
-							         ],
-							         "substitutions":{  
-							            "-email-":lender.email,
-							            "-link-":"http://"+settings.HOST_DOMAIN+"api/lender/verify/?="+lender.id
-							         }
-							      }
-							   ],
-							   "from":{  
-							      "email":"support@lytyfy.org"
-							   },
-							   "content":[  
-							      {  
-							         "type":"text/html",
-							         "value":"Hello, Email!"
-							      }
-							   ],
-							   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
-							}
-					response = sg.client.mail.send.post(request_body=data)
-					return Response({'message':"Sent for verification"},status=status.HTTP_200_OK)
-				except:
-					return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
+				user = User.objects.create_user(params['email'], None, password)
+				user.is_active = False
+				user.save()
+				lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
+				lender.save()
+				LenderWallet(lender=lender).save()
+				sg = sendgrid.SendGridAPIClient(apikey="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")
+				data = {  
+						   "personalizations":[  
+						      {  
+						         "to":[  
+						            {  
+						               "email":"jsmith503@gmail.com"
+						            }
+						         ],
+						         "substitutions":{  
+						            "-email-":lender.email,
+						            "-link-":"http://"+settings.HOST_DOMAIN+"api/lender/verify/?="+lender.id
+						         }
+						      }
+						   ],
+						   "from":{  
+						      "email":"support@lytyfy.org"
+						   },
+						   "content":[  
+						      {  
+						         "type":"text/html",
+						         "value":"Hello, Email!"
+						      }
+						   ],
+						   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
+						}
+				response = sg.client.mail.send.post(request_body=data)
+				return Response({'message':"Sent for verification"},status=status.HTTP_200_OK)
 			else:
 				return Response({'error': 'CANT ACCESS WITHOUT INVITATION OR ALREADY REGISTERED '},status=status.HTTP_401_UNAUTHORIZED)
 		return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
