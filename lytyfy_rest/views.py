@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from lytyfy_rest.models import LenderDeviabTransaction,Project,Lender,LenderCurrentStatus,LenderWallet,Token,LenderWithdrawalRequest,Invite,Borrower
 import hashlib
+import sendgrid
 from random import randint
 from rest_framework import serializers
 from lytyfy_rest.serializers import LenderDeviabTransactionSerializer,LenderSerializer,LenderWithdrawalRequestSerializer
@@ -163,7 +164,6 @@ class Register(APIView):
 					lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
 					lender.save()
 					LenderWallet(lender=lender).save()
-					import sendgrid
 					sg = sendgrid.SendGridAPIClient(apikey="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")
 					data = {  
 							   "personalizations":[  
