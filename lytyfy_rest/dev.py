@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django_facebook'
+    'django_facebook',
+    'sendgrid'
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -175,5 +176,9 @@ S3DIRECT_DESTINATIONS = {
 FACEBOOK_APP_ID = "189201174829529"
 FACEBOOK_APP_SECRET = "0566db82c09c5ae509f7c83bcca3b2c4"
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'django_facebook.auth_backends.FacebookBackend'
+]
 
 

@@ -163,23 +163,34 @@ class Register(APIView):
 					lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
 					lender.save()
 					LenderWallet(lender=lender).save()
-					try:
-						subject = """Welcome to lytyfy"""
-						html_message = """
-						Dear Patron,<br><br>
-						Thank you for joining Lytyfy!<br><br>
-						Now you can invest and lend a small amount to a borrower to enable them afford a solar home lighting system. Your investment would be a step towards extending energy access to all and a cleaner and greener Earth. If you need help or require any information, you can write to support@lytyfy.org <br><br><br>
-						<b>Your Lytyfy ID:</b> """+params['email']+"""<br><br>
-						<b>Password:</b> """+password+"""<br><br><br>
-						Please change your password once you <a href="try.lytyfy.org">log in</a>.<br><br>
-						Keep checking your account dashboard to see how your investment helps in moving towards a more equitable, cleaner and greener Planet. You could also check out our FAQs page for more information.<br><br>
-						Regards,<br>
-						Team Lytyfy"""
-						send_mail(subject,None, "support@lytyfy.org",[params['email']], fail_silently=True,html_message=html_message)
-						return Response({'msg':"Email sent to the investor"},status=status.HTTP_200_OK)
-					except:
-						return Response({'error': 'Something went wrong while sending email , kindly manualy send email to investor'},status=status.HTTP_400_BAD_REQUEST)
-				except IntegrityError:
+					import sendgrid
+					sg = sendgrid.SendGridAPIClient(apikey="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")
+					data = {  
+							   "personalizations":[  
+							      {  
+							         "to":[  
+							            {  
+							               "email":"jsmith503@gmail.com"
+							            }
+							         ],
+							         "substitutions":{  
+							            "-email-":lender.email
+							         }
+							      }
+							   ],
+							   "from":{  
+							      "email":"support@lytyfy.org"
+							   },
+							   "content":[  
+							      {  
+							         "type":"text/html",
+							         "value":"Hello, Email!"
+							      }
+							   ],
+							   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
+							}
+					response = sg.client.mail.send.post(request_body=data)
+				except:
 					return Response({'error': 'User already exists'},status=status.HTTP_400_BAD_REQUEST)
 			else:
 				return Response({'error': 'CANT ACCESS WITHOUT INVITATION OR ALREADY REGISTERED '},status=status.HTTP_401_UNAUTHORIZED)
