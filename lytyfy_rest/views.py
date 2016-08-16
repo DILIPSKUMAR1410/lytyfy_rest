@@ -174,7 +174,8 @@ class Register(APIView):
 							            }
 							         ],
 							         "substitutions":{  
-							            "-email-":lender.email
+							            "-email-":lender.email,
+							            "-link-":"http://"+settings.HOST_DOMAIN+"api/lender/verify/?="+lender.id
 							         }
 							      }
 							   ],
@@ -410,4 +411,25 @@ class FBToken(APIView):
 			else:
 				return Response({'msg':"Email not available"},status=status.HTTP_200_OK)	
 		return Response({'msg':"token not found"},status=status.HTTP_400_BAD_REQUEST)	
+
+
+class VerifyInvestor(APIView):
+	def get(self, request,format=None):
+		lender_id = request.GET.get('uid',None)
+		if lender_id:
+			lender = Lender.objects.filter(id=lender_id).first()
+			if lender:
+				lender.user.is_active = True
+				lender.user.save()
+				return Response({'msg':"Investor account sucessfully created"},status=status.HTTP_200_OK)
+			else:
+				return Response({'msg':"lender not found"},status=status.HTTP_400_BAD_REQUEST)	
+		return Response({'msg':"Invalid Request"},status=status.HTTP_400_BAD_REQUEST)	
+
+
+
+
+
+
+
 
