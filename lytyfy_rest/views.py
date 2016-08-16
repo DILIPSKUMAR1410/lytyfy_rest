@@ -418,13 +418,29 @@ class FBToken(APIView):
 						uid = uuid.uuid4().hex
 						invite.uid = uid
 						invite.save()
-						subject = """New Register"""
-						html_message = "http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
-						send_mail(subject,None, "support@lytyfy.org",[resp['email']], fail_silently=True,html_message=html_message)
-						return Response({'msg':"Check your email for registration link"},status=status.HTTP_200_OK)
-					return Response({'msg':"Email already exists"},status=status.HTTP_200_OK)	
+						sg = sendgrid.SendGridAPIClient(apikey="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")
+						data = {  
+								   "personalizations":[  
+								      {  
+								         "to":[  
+								            {  
+								               "email":email
+								            }
+								         ],
+								         "substitutions":{  
+								            "-link-":"http://"+settings.CLIENT_DOMAIN+"/#/register?uid="+uid
+								         }
+								      }
+								   ],
+								   "from":{  
+								      "email":"support@lytyfy.org"
+								   },
+								   "template_id": "8dfdcd2d-fd68-4b67-9237-2095184817aa"  
+								}
+						response = sg.client.mail.send.post(request_body=data)
+					return Response({'msg':"Check your email for registration link"},status=status.HTTP_201_CREATED)
 			else:
-				return Response({'msg':"Email not available"},status=status.HTTP_200_OK)	
+				return Response({'msg':"Update your email in facebook"},status=status.HTTP_400_BAD_REQUEST)	
 		return Response({'msg':"token not found"},status=status.HTTP_400_BAD_REQUEST)	
 
 
