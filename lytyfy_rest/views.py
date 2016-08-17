@@ -350,14 +350,27 @@ class ResetPassword(APIView):
 				user.set_password(password)
 				user.save()
 				try:
-					subject = """New Credentials"""
-					html_message = """
-					Dear Investor,<br><br>
-					Username: """+params['email']+"""<br>
-					Password: """+password+"""<br><br>
-					Regards,<br>
-					Team Lytyfy """
-					send_mail(subject,None, "support@lytyfy.org",[params['email']], fail_silently=True,html_message=html_message)
+					sg = sendgrid.SendGridAPIClient(apikey="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")
+					data = {  
+							   "personalizations":[  
+							      {  
+							         "to":[  
+							            {  
+							               "email":params['email']
+							            }
+							         ],
+							         "substitutions":{  
+							            "-username-":params['email'],
+							            "-password-":password
+							         }
+							      }
+							   ],
+							   "from":{  
+							      "email":"support@lytyfy.org"
+							   },
+							   "template_id": "e1e8ef81-1ba7-4a11-b266-9e634bba2b1f"  
+							}
+					response = sg.client.mail.send.post(request_body=data)
 					return Response({'msg':"New creds sent to your registered email"},status=status.HTTP_200_OK)
 				except:
 					return Response({'error': 'Something went wrong , kindly write us at support@lytyfy.org'},status=status.HTTP_400_BAD_REQUEST)
