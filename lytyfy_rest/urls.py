@@ -23,7 +23,6 @@ urlpatterns = [
     url(r'^api/transaction/formdata$', views.TransactionFormData.as_view()),
     url(r'^api/formcapture$', views.TransactionFormCapture.as_view()),
     url(r'^api/lender$', views.GetLenderDetail.as_view()),
-    url(r'^api/lender/investment$', views.GetLenderInvestmentDetail.as_view()),
     url(r'^api/lender/update$', views.UpdateLenderDetails.as_view()),
     url(r'^api/lender/register$', views.Register.as_view()),
     url(r'^api/lender/token/new$', views.GetToken.as_view()),
