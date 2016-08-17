@@ -37,6 +37,8 @@ urlpatterns = [
     url(r'^api/repayment/$', views.RepaymentToInvestors.as_view()),
     url(r'^api/FBToken/$', views.FBToken.as_view()),
     url(r'^api/lender/verify/$', views.VerifyInvestor.as_view()),
+    url(r'^api/lender/dashboard$', views.DashBoardApi.as_view()),
+    url(r'^api/lender/wallet/transactions$', views.WalletTransactions.as_view()),
     
 
 ]

@@ -27,6 +27,30 @@ class HomePageApi(APIView):
 		borrowers=Borrower.objects.all().count()
 		return Response({'backers':investors,'quantum':raised,'borrowers':borrowers},status=status.HTTP_200_OK)
 
+class DashBoardApi(APIView):
+	@token_required
+	def get(self,request,format=None):
+		pk = request.token.user.lender.id
+		data={}
+		lcs = LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','principal_left','emr')
+		totalInvestment = totalEmr = 0
+		for current_status in lcs:
+			totalInvestment += current_status['principal_repaid'] + current_status['principal_left']
+			totalEmr += current_status['emr']
+		data['totalInvestment'] = totalInvestment
+		data['totalEmr'] = totalEmr
+		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
+		return Response(data,status=status.HTTP_200_OK)
+
+class WalletTransactions(APIView):
+	@token_required
+	def get(self,request,format=None):
+		pk = request.token.user.lender.id
+		data={}
+		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
+		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')		
+		return Response(data,status=status.HTTP_200_OK)
+
 class TransactionFormData(APIView):
 	@token_required
 	def get(self,request,format=None):
@@ -136,7 +160,8 @@ class GetLenderInvestmentDetail(APIView):
 class UpdateLenderDetails(APIView):
 	@token_required
 	@transaction.atomic
-	def post(self,request,pk,format=None):
+	def post(self,request,format=None):
+		pk = request.token.user.lender.id
 		params=request.data
 		if params:
 			lender=Lender.objects.get(pk=pk)
@@ -207,7 +232,7 @@ class GetToken(APIView):
 					else:
 						Token(user=user).save()
 						new_token = Token.objects.filter(user=user).first().token
-						return Response({'token': new_token,'username': user.username},status=status.HTTP_200_OK)
+						return Response({'token': new_token,'username': user.lender.first_name},status=status.HTTP_200_OK)
 				else:
 					return Response({'error': 'Invalid User'},status=status.HTTP_400_BAD_REQUEST)
 			else:
@@ -419,7 +444,7 @@ class FBToken(APIView):
 					token_exist = Token.objects.filter(user=user)
 					if token_exist:
 						token=token_exist.first().token
-						return Response({'token': token,'username': user.username},status=status.HTTP_200_OK)
+						return Response({'token': token,'username': user.lender.first_name,'img_url':facebook.my_image_url(size='large')},status=status.HTTP_200_OK)
 					else:
 						Token(user=user).save()
 						new_token = Token.objects.filter(user=user).first().token

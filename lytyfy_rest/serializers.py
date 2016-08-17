@@ -10,7 +10,7 @@ class LenderDeviabTransactionSerializer(serializers.ModelSerializer):
 class LenderSerializer(serializers.ModelSerializer):
      class Meta:
         model = Lender
-        fields = ['first_name','mobile_number','email']
+        fields = ['first_name','mobile_number','email','last_name','dob','gender']
 
 class LenderWithdrawalRequestSerializer(serializers.ModelSerializer):
 	class Meta:
