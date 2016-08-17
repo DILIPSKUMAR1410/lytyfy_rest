@@ -117,45 +117,13 @@ class TransactionFormCapture(APIView):
 
 class GetLenderDetail(APIView):
 	@token_required
-	def get(self,request,pk,format=None):
+	def get(self,request,format=None):
 		try:
-			lenderDetails=Lender.objects.values('id','first_name','email','mobile_number').get(pk=pk)
+			pk=request.token.user.lender.id
+			lenderDetails=Lender.objects.values('id','first_name','email','mobile_number','dob','gender').get(pk=pk)
 			return Response(lenderDetails,status=status.HTTP_200_OK)
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
-
-class GetLenderInvestmentDetail(APIView):
-	@token_required
-	def get(self,request,pk,format=None):
-		data={}
-		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
-		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')
-		map_data=ldt.filter(transactions_type="debit").values('project__title').annotate(investment = Sum('amount'))
-		totalInvestment=0
-		for transaction in data['transactions']:
-			transaction['timestamp']=transaction['timestamp'].strftime("%d, %b %Y | %r")
-			if transaction['transactions_type'] == "debit":
-				totalInvestment+=transaction['amount']
-		data['totalInvestment']=totalInvestment	
-		data['investmentDetails']=LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','interest_repaid','emr','project__title')
-		totalPrincipalRepaid=totalInterestRepaid=totalEmr=0
-		for investmentDetail in data['investmentDetails']:
-			totalPrincipalRepaid+=investmentDetail['principal_repaid']
-			totalInterestRepaid+=investmentDetail['interest_repaid']
-			totalEmr+=investmentDetail['emr']			
-			investmentDetail['investment']=[item['investment'] for item in map_data if item["project__title"] == investmentDetail["project__title"]][0]		
-		data['totalPrincipalRepaid']=totalPrincipalRepaid
-		data['totalInterestRepaid']=totalInterestRepaid
-		data['totalEmr']=totalEmr
-		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
-		totalAmountWithdraw=LenderWithdrawalRequest.objects.filter(status=1,lender_id=pk).values('amount')
-		totalWithdrawal=0
-		for withdraw in totalAmountWithdraw:
-			totalWithdrawal+=withdraw['amount']
-		data['totalWithdrawal']=totalWithdrawal
-		return Response(data,status=status.HTTP_200_OK)
-		
-
 
 class UpdateLenderDetails(APIView):
 	@token_required
@@ -242,14 +210,15 @@ class GetToken(APIView):
 
 class KillToken(APIView):
 	@token_required
-	def get(self,request,pk=None):
+	def get(self,request):
 		request.token.delete()
 		return Response({'success':"Succesfully token killed"},status=status.HTTP_200_OK)
 
 class LenderWithdrawRequest(APIView):
 	@token_required
 	@transaction.atomic
-	def post(self,request,pk,format=None):
+	def post(self,request,format=None):
+		pk=request.token.user.lender.id
 		balance=LenderWallet.objects.get(lender__id=pk).balance
 		if balance < 1001:
 			return Response({'message':"your balance is less than 1000"},status=status.HTTP_200_OK)
@@ -317,7 +286,8 @@ class RequestInvite(APIView):
 class ChangePassword(APIView):
 	@token_required
 	@transaction.atomic
-	def post(self,request,pk,format=None):
+	def post(self,request,format=None):
+		pk=request.token.user.lender.id
 		params=request.data
 		if params:
 			try:
