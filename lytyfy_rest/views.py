@@ -510,7 +510,8 @@ class VerifyInvestor(APIView):
 							         ],
 							         "substitutions":{  
 							            "-username-":lender.email,
-							            "-password-":password
+							            "-password-":password,
+							            "-first_name-":lender.first_name
 							         }
 							      }
 							   ],
