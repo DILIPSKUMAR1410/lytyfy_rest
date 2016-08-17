@@ -419,7 +419,7 @@ class FBToken(APIView):
 					else:
 						Token(user=user).save()
 						new_token = Token.objects.filter(user=user).first().token
-						return Response({'token': new_token,'username': user.username},status=status.HTTP_200_OK)
+						return Response({'token': new_token,'username': user.lender.first_name,'img_url':facebook.my_image_url(size='large')},status=status.HTTP_200_OK)
 				else:
 					invite,created=Invite.objects.get_or_create(email=resp['email'])
 					if created:
