@@ -120,7 +120,7 @@ class GetLenderDetail(APIView):
 	def get(self,request,format=None):
 		try:
 			pk=request.token.user.lender.id
-			lenderDetails=Lender.objects.values('id','first_name','email','mobile_number','dob','gender').get(pk=pk)
+			lenderDetails=Lender.objects.values('id','first_name','last_name','email','mobile_number','dob','gender').get(pk=pk)
 			return Response(lenderDetails,status=status.HTTP_200_OK)
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
