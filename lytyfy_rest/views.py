@@ -386,7 +386,8 @@ class ResetPassword(APIView):
 							         ],
 							         "substitutions":{  
 							            "-username-":params['email'],
-							            "-password-":password
+							            "-password-":password,
+							            "-first_name-":user.lender.first_name
 							         }
 							      }
 							   ],
