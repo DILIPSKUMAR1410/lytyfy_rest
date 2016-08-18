@@ -54,9 +54,10 @@ class WalletTransactions(APIView):
 class TransactionFormData(APIView):
 	@token_required
 	def get(self,request,format=None):
-		if request.GET.get('amount',None) and request.GET.get('lenderId',None) and request.GET.get('projectId',None):
+		if request.GET.get('amount',None) and request.GET.get('projectId',None):
 			try:
 				params=request.GET
+				params['lenderId'] = request.token.user.lender.id
 				data=Lender.objects.values('first_name','email','mobile_number').get(pk=params['lenderId'])
 				if not data['first_name'] or not data['email']  and not data['mobile_number']:
 					return Response({'error':"Please provide your profile details "},status=status.HTTP_400_BAD_REQUEST) 
@@ -326,12 +327,6 @@ class ListProject(APIView):
 			project_detail['repayment_term']=8
 			project_detail['repayment_schedule']="Monthly"
 			project_detail['status']= "running" if project.offlistDate > timezone.now() else "completed"
-			project_detail['amount_to_invest']=""
-			if request.GET.get('lenderId',None):
-				project_detail['current_user']={}
-				project_detail['current_user']['invested']=any(int(lender['lender_id']) == int(request.GET.get('lenderId')) for lender in project_detail['lenders'])
-				if project_detail['current_user']['invested']:
-					project_detail['current_user'].update(project.project_transactions.filter(lender_id=request.GET.get('lenderId',None)).aggregate(Sum('amount')))
 			data.append(project_detail)
 		return Response(data,status=status.HTTP_200_OK)
 
