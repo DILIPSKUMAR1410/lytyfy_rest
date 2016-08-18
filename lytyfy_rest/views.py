@@ -171,7 +171,7 @@ class Register(APIView):
 						            }
 						         ],
 						         "substitutions":{  
-						            "-user_name-":lender.email,
+						            "-email-":lender.email,
 						            "-link-":"http://"+settings.HOST_DOMAIN+"/api/lender/verify/?lender_id="+str(lender.id)
 						         }
 						      }
@@ -475,7 +475,7 @@ class VerifyInvestor(APIView):
 							            }
 							         ],
 							         "substitutions":{  
-							            "-username-":lender.email,
+							            "-user_name-":lender.email,
 							            "-password-":password,
 							            "-first_name-":lender.first_name
 							         }
