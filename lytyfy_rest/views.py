@@ -156,7 +156,8 @@ class Register(APIView):
 				user = User.objects.create_user(params['email'], None, password)
 				user.is_active = False
 				user.save()
-				lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),first_name=params.get('name',None))
+				lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),\
+							first_name=params.get('first_name',None),last_name=params.get('last_name',None),mobile_number=params.get('mobile_number',None))
 				lender.save()
 				LenderWallet(lender=lender).save()
 				sg = sendgrid.SendGridAPIClient(apikey="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")
