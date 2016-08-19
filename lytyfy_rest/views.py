@@ -300,7 +300,7 @@ class ChangePassword(APIView):
 		if params:
 			try:
 				hash_password=lender.user.password
-				flag=check_password(params['old_password'],hash_password['user__password'])
+				flag=check_password(params['old_password'],hash_password)
 				if flag:
 					user=lender.user
 					user.set_password(params['new_password'])
