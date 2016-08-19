@@ -144,7 +144,7 @@ class UpdateLenderDetails(APIView):
 			serializer=LenderSerializer(lender,data=params,partial=True)
 			if serializer.is_valid():
 				serializer.save()
-				return Response({'message':"Profile Succesfully Updated"},status=status.HTTP_200_OK)
+				return Response({'msg':"Profile Succesfully Updated"},status=status.HTTP_200_OK)
 			else:
 				return Response({'error':"Invalid parameters"},status=status.HTTP_400_BAD_REQUEST)
 		else:
@@ -189,7 +189,7 @@ class Register(APIView):
 						   "template_id": "e9eed821-b227-480d-bbe3-a932294a4f22"  
 						}
 				response = sg.client.mail.send.post(request_body=data)
-				return Response({'message':"Sent for verification"},status=status.HTTP_200_OK)
+				return Response({'msg':"Sent for verification"},status=status.HTTP_200_OK)
 			else:
 				return Response({'error': 'CANT ACCESS WITHOUT INVITATION OR ALREADY REGISTERED '},status=status.HTTP_401_UNAUTHORIZED)
 		return Response({'error': 'Invalid Data'},status=status.HTTP_400_BAD_REQUEST)
@@ -230,10 +230,10 @@ class LenderWithdrawRequest(APIView):
 		lender=request.token.user.lender
 		balance=lender.wallet.balance
 		if balance < 1001:
-			return Response({'message':"your balance is less than 1000"},status=status.HTTP_200_OK)
+			return Response({'msg':"your balance is less than 1000"},status=status.HTTP_200_OK)
 		pending_request=LenderWithdrawalRequest.objects.filter(lender=lender,status=0).values('status')
 		if pending_request:
-			return Response({'message':"you still have a pending request"},status=status.HTTP_200_OK)
+			return Response({'msg':"you still have a pending request"},status=status.HTTP_200_OK)
 		params=request.data
 		if params:
 			params['amount']=balance
@@ -241,7 +241,7 @@ class LenderWithdrawRequest(APIView):
 			serializer=LenderWithdrawalRequestSerializer(data=params)
 			if serializer.is_valid():
 				serializer.save()
-				return Response({'message':"Request Send"},status=status.HTTP_200_OK)
+				return Response({'msg':"Request Send"},status=status.HTTP_200_OK)
 			else:
 				return Response({'error':"Invalid Request"},status=status.HTTP_400_BAD_REQUEST)
 		else:
@@ -305,7 +305,7 @@ class ChangePassword(APIView):
 					user=lender.user
 					user.set_password(params['new_password'])
 					user.save()
-					return Response({'message':"Password sucessfully changed"},status=status.HTTP_200_OK)
+					return Response({'msg':"Password sucessfully changed"},status=status.HTTP_200_OK)
 				else:
 					return Response({'error':"Wrong old password"},status=status.HTTP_400_BAD_REQUEST)
 			except:
