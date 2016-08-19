@@ -46,7 +46,7 @@ class WalletTransactions(APIView):
 	@token_required
 	def get(self,request,format=None):
 		lender = request.token.user.lender
-		ldt=LenderDeviabTransaction.objects.filter(lender=lender)
+		ldt=LenderDeviabTransaction.objects.select_related('project').filter(lender=lender)
 		data=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')	
 		for datum in data:
 			datum['timestamp'] = datum['timestamp'].strftime("%d, %b %Y | %r")	
@@ -56,7 +56,8 @@ class LenderPortfolio(APIView):
 	@token_required
 	def get(self,request,format=None):
 		lender = request.token.user.lender
-		data = LenderCurrentStatus.objects.filter(lender=lender).values()
+		data = LenderCurrentStatus.objects.select_related('project').filter(lender=lender).values('principal_repaid','emr','tenure_left','principal_left',\
+				'interest_repaid','interest_left','project__title','project__targetAmount','project__raisedAmount','project__offlistDate')
 		return Response(data,status=status.HTTP_200_OK)
 
 class TransactionFormData(APIView):
@@ -317,7 +318,7 @@ class ChangePassword(APIView):
 
 class ListProject(APIView):
 	def get(self, request,format=None):
-		projects=Project.objects.all()
+		projects=Project.objects.prefetch_related('lenders').all()
 		data=[]
 		for project in projects:
 			project_detail={}
