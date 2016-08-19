@@ -30,26 +30,33 @@ class HomePageApi(APIView):
 class DashBoardApi(APIView):
 	@token_required
 	def get(self,request,format=None):
-		pk = request.token.user.lender.id
+		lender = request.token.user.lender
 		data={}
-		lcs = LenderCurrentStatus.objects.filter(lender_id=pk).values('principal_repaid','principal_left','emr')
+		lcs = LenderCurrentStatus.objects.filter(lender=lender).values('principal_repaid','principal_left','emr')
 		totalInvestment = totalEmr = 0
 		for current_status in lcs:
 			totalInvestment += current_status['principal_repaid'] + current_status['principal_left']
 			totalEmr += current_status['emr']
 		data['totalInvestment'] = totalInvestment
 		data['totalEmr'] = totalEmr
-		data['credits']=LenderWallet.objects.values_list('balance').get(lender_id=pk)[0]
+		data['credits']=LenderWallet.objects.get(lender=lender).balance
 		return Response(data,status=status.HTTP_200_OK)
 
 class WalletTransactions(APIView):
 	@token_required
 	def get(self,request,format=None):
-		pk = request.token.user.lender.id
-		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
+		lender = request.token.user.lender
+		ldt=LenderDeviabTransaction.objects.filter(lender=lender)
 		data=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')	
 		for datum in data:
 			datum['timestamp'] = datum['timestamp'].strftime("%d, %b %Y | %r")	
+		return Response(data,status=status.HTTP_200_OK)
+
+class LenderPortfolio(APIView):
+	@token_required
+	def get(self,request,format=None):
+		lender = request.token.user.lender
+		data = LenderCurrentStatus.objects.filter(lender=lender).values()
 		return Response(data,status=status.HTTP_200_OK)
 
 class TransactionFormData(APIView):
@@ -58,8 +65,8 @@ class TransactionFormData(APIView):
 		if request.GET.get('amount',None) and request.GET.get('projectId',None):
 			try:
 				params=request.GET
-				params['lenderId'] = request.token.user.lender.id
-				data=Lender.objects.values('first_name','email','mobile_number').get(pk=params['lenderId'])
+				lender = request.token.user.lender
+				data = {'first_name':lender.first_name,'email':lender.email,'mobile_number':lender.mobile_number}
 				if not data['first_name'] or not data['email']  and not data['mobile_number']:
 					return Response({'error':"Please provide your profile details "},status=status.HTTP_400_BAD_REQUEST) 
 				project = Project.objects.values('title').get(pk=params['projectId'])
@@ -78,7 +85,7 @@ class TransactionFormData(APIView):
 			  	response['furl']= "http://"+settings.HOST_DOMAIN+"/api/formcapture"
 			  	response['surl']= "http://"+settings.HOST_DOMAIN+"/api/formcapture"
 			  	response['udf2']= params['projectId']
-			  	response['udf1']= params['lenderId']
+			  	response['udf1']= lender.id
 			  	response['amount']= params['amount']
 			  	response['txnid']= txnid
 				return Response(response,status=status.HTTP_200_OK)
@@ -121,8 +128,8 @@ class GetLenderDetail(APIView):
 	@token_required
 	def get(self,request,format=None):
 		try:
-			pk=request.token.user.lender.id
-			lenderDetails=Lender.objects.values('id','first_name','last_name','email','mobile_number','dob','gender').get(pk=pk)
+			lender=request.token.user.lender
+			lenderDetails={'first_name':lender.first_name,'last_name':lender.last_name,'email':lender.email,'mobile_number':lender.mobile_number,'dob':lender.dob,'gender':lender.get_gender_display()}
 			return Response(lenderDetails,status=status.HTTP_200_OK)
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
@@ -131,10 +138,9 @@ class UpdateLenderDetails(APIView):
 	@token_required
 	@transaction.atomic
 	def post(self,request,format=None):
-		pk = request.token.user.lender.id
 		params=request.data
 		if params:
-			lender=Lender.objects.get(pk=pk)
+			lender=request.token.user.lender
 			serializer=LenderSerializer(lender,data=params,partial=True)
 			if serializer.is_valid():
 				serializer.save()
@@ -221,19 +227,18 @@ class LenderWithdrawRequest(APIView):
 	@token_required
 	@transaction.atomic
 	def post(self,request,format=None):
-		pk=request.token.user.lender.id
-		balance=LenderWallet.objects.get(lender__id=pk).balance
+		lender=request.token.user.lender
+		balance=lender.wallet.balance
 		if balance < 1001:
 			return Response({'message':"your balance is less than 1000"},status=status.HTTP_200_OK)
-		pending_request=LenderWithdrawalRequest.objects.filter(lender__id=pk,status=0).values('status')
+		pending_request=LenderWithdrawalRequest.objects.filter(lender=lender,status=0).values('status')
 		if pending_request:
 			return Response({'message':"you still have a pending request"},status=status.HTTP_200_OK)
 		params=request.data
 		if params:
 			params['amount']=balance
-			params['lender']=pk
+			params['lender']=lender.id
 			serializer=LenderWithdrawalRequestSerializer(data=params)
-			serializer.is_valid()
 			if serializer.is_valid():
 				serializer.save()
 				return Response({'message':"Request Send"},status=status.HTTP_200_OK)
@@ -245,8 +250,8 @@ class LenderWithdrawRequest(APIView):
 class VerifyToken(APIView):
 	@token_required
 	def get(self,request,format=None):
-		pk=request.token.user.lender.id
-		lenderDetails=Lender.objects.values('id','email','first_name').get(pk=pk)
+		lender=request.token.user.lender
+		lenderDetails={'first_name':lender.first_name,'id':lender.id,'email':lender.email}
 		return Response(lenderDetails,status=status.HTTP_200_OK)
 		
 
@@ -290,14 +295,14 @@ class ChangePassword(APIView):
 	@token_required
 	@transaction.atomic
 	def post(self,request,format=None):
-		pk=request.token.user.lender.id
+		lender=request.token.user.lender
 		params=request.data
 		if params:
 			try:
-				hash_password=Lender.objects.values('user__password').get(pk=pk)
+				hash_password=lender.user.password
 				flag=check_password(params['old_password'],hash_password['user__password'])
 				if flag:
-					user=Lender.objects.get(pk=pk).user
+					user=lender.user
 					user.set_password(params['new_password'])
 					user.save()
 					return Response({'message':"Password sucessfully changed"},status=status.HTTP_200_OK)

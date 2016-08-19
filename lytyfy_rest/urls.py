@@ -25,6 +25,7 @@ urlpatterns = [
     url(r'^api/lender$', views.GetLenderDetail.as_view()),
     url(r'^api/lender/update$', views.UpdateLenderDetails.as_view()),
     url(r'^api/lender/register$', views.Register.as_view()),
+    url(r'^api/lender/portfolio$', views.LenderPortfolio.as_view()),
     url(r'^api/lender/token/new$', views.GetToken.as_view()),
     url(r'^api/lender/token/kill$', views.KillToken.as_view()),
     url(r'^api/lender/withdraw$', views.LenderWithdrawRequest.as_view()),
