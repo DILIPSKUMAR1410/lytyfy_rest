@@ -46,9 +46,10 @@ class WalletTransactions(APIView):
 	@token_required
 	def get(self,request,format=None):
 		pk = request.token.user.lender.id
-		data={}
 		ldt=LenderDeviabTransaction.objects.filter(lender_id=pk)
-		data['transactions']=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')		
+		data=ldt.values('amount','payment_id','timestamp','project__title','transactions_type').order_by('-timestamp')	
+		for datum in data:
+			datum['timestamp'] = datum['timestamp'].strftime("%d, %b %Y | %r")	
 		return Response(data,status=status.HTTP_200_OK)
 
 class TransactionFormData(APIView):
