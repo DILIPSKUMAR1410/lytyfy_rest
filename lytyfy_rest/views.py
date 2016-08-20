@@ -19,7 +19,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.db.models import Sum
 from django.conf import settings
-from open_facebook.api import OpenFacebook
+from open_facebook.api import OpenFacebook,FacebookAuthorization
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
@@ -422,7 +422,8 @@ class FBToken(APIView):
 	@transaction.atomic
 	def post(self, request,format=None):
 		if request.data.get('access_token'):
-			facebook = OpenFacebook(request.data.get('access_token'))
+			access_token = FacebookAuthorization.extend_access_token(request.data.get('access_token')).get('access_token')
+			facebook = OpenFacebook(access_token)
 			resp = facebook.get('me', fields='id,email')
 			
 			if resp['email']:
@@ -432,13 +433,15 @@ class FBToken(APIView):
 					if token_exist:
 						first_one = token_exist.first()
 						token=first_one.token
-						first_one.save(social_token=request.data.get('access_token'))
+						first_one.social_token = access_token
+						first_one.save()
 						return Response({'token': token},status=status.HTTP_200_OK)
 					else:
 						Token(user=user).save()
 						first_one = Token.objects.filter(user=user).first()
 						new_token = first_one.token
-						first_one.save(social_token=request.data.get('access_token'))
+						first_one.social_token = access_token
+						first_one.save()
 						return Response({'token': new_token},status=status.HTTP_200_OK)
 				else:
 					invite,created=Invite.objects.get_or_create(email=resp['email'])
