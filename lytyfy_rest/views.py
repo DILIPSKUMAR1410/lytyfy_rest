@@ -432,14 +432,13 @@ class FBToken(APIView):
 					if token_exist:
 						first_one = token_exist.first()
 						token=first_one.token
-						first_one.social_token = request.data.get('access_token')
-						first_one.save()
+						first_one.save(social_token=request.data.get('access_token'))
 						return Response({'token': token},status=status.HTTP_200_OK)
 					else:
 						Token(user=user).save()
 						first_one = Token.objects.filter(user=user).first()
 						new_token = first_one.token
-						first_one.social_token = request.data.get('access_token')
+						first_one.save(social_token=request.data.get('access_token'))
 						return Response({'token': new_token},status=status.HTTP_200_OK)
 				else:
 					invite,created=Invite.objects.get_or_create(email=resp['email'])
