@@ -87,6 +87,7 @@ class Token(models.Model):
     user = models.ForeignKey(User)
     token = models.CharField(max_length=40, primary_key=True)
     created = models.DateTimeField(default=timezone.now())
+    social_token =models.CharField(max_length=120,null=True) 
 
     def save(self, *args, **kwargs):
         if not self.token:

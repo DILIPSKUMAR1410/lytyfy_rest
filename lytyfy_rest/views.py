@@ -19,6 +19,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 from django.db.models import Sum
 from django.conf import settings
+from open_facebook.api import OpenFacebook
 
 class HomePageApi(APIView):
 	def get(self, request,format=None):
@@ -135,6 +136,19 @@ class GetLenderDetail(APIView):
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
 
+class GetLenderProfile(APIView):
+	@token_required
+	def get(self,request,format=None):
+		try:
+			lender=request.token.user.lender
+			lenderDetails={'first_name':lender.first_name,'last_name':lender.last_name,'email':lender.email}
+			if request.token.social_token:
+				facebook = OpenFacebook(request.token.social_token)
+				lenderDetails.append({'img_url':facebook.my_image_url(size='large')})
+			return Response(lenderDetails,status=status.HTTP_200_OK)
+		except:
+			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
+
 class UpdateLenderDetails(APIView):
 	@token_required
 	@transaction.atomic
@@ -206,11 +220,11 @@ class GetToken(APIView):
 					token_exist = Token.objects.filter(user=user)
 					if token_exist:
 						token=token_exist.first().token
-						return Response({'token': token,'username': user.username},status=status.HTTP_200_OK)	
+						return Response({'token': token},status=status.HTTP_200_OK)	
 					else:
 						Token(user=user).save()
 						new_token = Token.objects.filter(user=user).first().token
-						return Response({'token': new_token,'username': user.lender.first_name},status=status.HTTP_200_OK)
+						return Response({'token': new_token},status=status.HTTP_200_OK)
 				else:
 					return Response({'error': 'Invalid User'},status=status.HTTP_400_BAD_REQUEST)
 			else:
@@ -408,7 +422,6 @@ class FBToken(APIView):
 	@transaction.atomic
 	def post(self, request,format=None):
 		if request.data.get('access_token'):
-			from open_facebook.api import OpenFacebook
 			facebook = OpenFacebook(request.data.get('access_token'))
 			resp = facebook.get('me', fields='id,email')
 			
@@ -417,12 +430,17 @@ class FBToken(APIView):
 				if user:
 					token_exist = Token.objects.filter(user=user)
 					if token_exist:
-						token=token_exist.first().token
-						return Response({'token': token,'username': user.lender.first_name,'img_url':facebook.my_image_url(size='large')},status=status.HTTP_200_OK)
+						first_one = token_exist.first()
+						token=first_one.token
+						first_one.social_token = request.data.get('access_token')
+						first_one.save()
+						return Response({'token': token},status=status.HTTP_200_OK)
 					else:
 						Token(user=user).save()
-						new_token = Token.objects.filter(user=user).first().token
-						return Response({'token': new_token,'username': user.lender.first_name,'img_url':facebook.my_image_url(size='large')},status=status.HTTP_200_OK)
+						first_one = Token.objects.filter(user=user).first()
+						new_token = first_one.token
+						first_one.social_token = request.data.get('access_token')
+						return Response({'token': new_token},status=status.HTTP_200_OK)
 				else:
 					invite,created=Invite.objects.get_or_create(email=resp['email'])
 					if created:
