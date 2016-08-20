@@ -144,7 +144,7 @@ class GetLenderProfile(APIView):
 			lenderDetails={'first_name':lender.first_name,'last_name':lender.last_name,'email':lender.email}
 			if request.token.social_token:
 				facebook = OpenFacebook(request.token.social_token)
-				lenderDetails.append({'img_url':facebook.my_image_url(size='large')})
+				lenderDetails['img_url'] = facebook.my_image_url(size='large')
 			return Response(lenderDetails,status=status.HTTP_200_OK)
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
