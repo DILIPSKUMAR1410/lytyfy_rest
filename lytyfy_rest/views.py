@@ -427,7 +427,7 @@ class FBToken(APIView):
 			resp = facebook.get('me', fields='id,email')
 			
 			if resp['email']:
-				user = User.objects.filter(username=resp['email']).first()
+				user = User.objects.filter(username=resp['email'],is_active=True).first()
 				if user:
 					token_exist = Token.objects.filter(user=user)
 					if token_exist:
