@@ -470,6 +470,8 @@ class FBToken(APIView):
 								   "template_id": "8dfdcd2d-fd68-4b67-9237-2095184817aa"  
 								}
 						response = sg.client.mail.send.post(request_body=data)
+					elif invite.is_verified:
+						return Response({'msg':"Your application is under verification"},status=status.HTTP_201_CREATED)
 					return Response({'msg':"Check your email for registration link"},status=status.HTTP_201_CREATED)
 			else:
 				return Response({'msg':"Update your email in facebook"},status=status.HTTP_400_BAD_REQUEST)	
