@@ -179,7 +179,9 @@ class Register(APIView):
 				user = User.objects.create_user(params['email'], None, password)
 				user.is_active = False
 				user.save()
-				lender=Lender(user=user,email=user.username,gender=params.get('gender',None),dob=params.get('dob',None),\
+				gender_dict = {"Male":0,"Female":1,"Others":2}
+				gender = gender_dict[params.get('gender',None)]
+				lender=Lender(user=user,email=user.username,gender=gender,dob=params.get('dob',None),\
 							first_name=params.get('first_name',None),last_name=params.get('last_name',None),mobile_number=params.get('mobile_number',None))
 				lender.save()
 				LenderWallet(lender=lender).save()
