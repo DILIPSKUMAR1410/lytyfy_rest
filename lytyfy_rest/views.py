@@ -143,8 +143,21 @@ class GetLenderProfile(APIView):
 			lender=request.token.user.lender
 			lenderDetails={'first_name':lender.first_name,'last_name':lender.last_name,'email':lender.email}
 			if request.token.social_token:
-				facebook = OpenFacebook(request.token.social_token)
-				lenderDetails['img_url'] = facebook.my_image_url(size='large')
+				social_type = request.token.social_token.split("social_type=")
+				access_token = social_type[0]
+				social_type = social_type[1]
+				if social_type == "F":
+					facebook = OpenFacebook(access_token)
+					lenderDetails['img_url'] = facebook.my_image_url(size='large')
+				elif social_type == "G":
+					from oauth2client.client import AccessTokenCredentials
+					import httplib2
+					from googleapiclient.discovery import build
+					credentials = AccessTokenCredentials(access_token,'my-user-agent/1.0') 
+					http = credentials.authorize(httplib2.Http())
+					service = build("plus", "v1", http=http)
+					people = service.people().get(userId="me").execute()
+					lenderDetails['img_url'] = people['image']['url']
 			return Response(lenderDetails,status=status.HTTP_200_OK)
 		except:
 			return Response({'error':"Lender not found"},status=status.HTTP_400_BAD_REQUEST)
@@ -423,13 +436,27 @@ class RepaymentToInvestors(APIView):
 class FBToken(APIView):
 	@transaction.atomic
 	def post(self, request,format=None):
-		if request.data.get('access_token'):
-			access_token = FacebookAuthorization.extend_access_token(request.data.get('access_token')).get('access_token')
-			facebook = OpenFacebook(access_token)
-			resp = facebook.get('me', fields='id,email')
-			
-			if resp['email']:
-				user = User.objects.filter(username=resp['email'],is_active=True).first()
+		access_token = request.data.get('access_token')
+		social_type = request.data.get('social_type')
+		if access_token and social_type:
+			if social_type == "G":
+				from oauth2client.client import AccessTokenCredentials
+				import httplib2
+				from googleapiclient.discovery import build
+				credentials = AccessTokenCredentials(access_token,'my-user-agent/1.0') 
+				http = credentials.authorize(httplib2.Http())
+				service = build("plus", "v1", http=http)
+				people = service.people().get(userId="me").execute()
+				email = people['emails'][0]['value']
+				access_token = access_token+"social_type=G"
+			elif social_type == "F":
+				access_token = FacebookAuthorization.extend_access_token(access_token).get('access_token')
+				facebook = OpenFacebook(access_token)
+				resp = facebook.get('me', fields='id,email')
+				email = resp['email']
+				access_token = access_token+"social_type=F"
+			if email:
+				user = User.objects.filter(username=email,is_active=True).first()
 				if user:
 					token_exist = Token.objects.filter(user=user)
 					if token_exist:
@@ -446,7 +473,7 @@ class FBToken(APIView):
 						first_one.save()
 						return Response({'token': new_token},status=status.HTTP_200_OK)
 				else:
-					invite,created=Invite.objects.get_or_create(email=resp['email'])
+					invite,created=Invite.objects.get_or_create(email=email)
 					if created:
 						import uuid
 						uid = uuid.uuid4().hex
@@ -458,7 +485,7 @@ class FBToken(APIView):
 								      {  
 								         "to":[  
 								            {  
-								               "email":resp['email']
+								               "email":email
 								            }
 								         ],
 								         "substitutions":{  

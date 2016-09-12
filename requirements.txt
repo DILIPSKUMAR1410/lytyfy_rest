@@ -10,3 +10,4 @@ lockfile==0.8
 django-s3direct
 django_facebook
 sendgrid
+google-api-python-client
