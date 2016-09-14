@@ -27,14 +27,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-#SERVER IP
-HOST_IP= "54.169.235.117"
+# SERVER IP
+HOST_IP = "54.169.235.117"
 
-#SERVER DOMAIN
-HOST_DOMAIN= "dev-api.lytyfy.org"
+# SERVER DOMAIN
+HOST_DOMAIN = "dev-api.lytyfy.org"
 
-#CLIENT DOMAIN
-CLIENT_DOMAIN= "dev.lytyfy.org"
+# CLIENT DOMAIN
+CLIENT_DOMAIN = "dev.lytyfy.org"
 
 # Application definition
 
@@ -90,11 +90,12 @@ WSGI_APPLICATION = 'lytyfy_rest.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', 
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'develop',
         'USER': 'mrrobot',
         'PASSWORD': 'DiVaNe_47',
-        'HOST': 'lytyfy-rds-dev.c4py8eplysvm.ap-southeast-1.rds.amazonaws.com',   # Or an IP Address that your DB is hosted on
+        # Or an IP Address that your DB is hosted on
+        'HOST': 'lytyfy-rds-dev.c4py8eplysvm.ap-southeast-1.rds.amazonaws.com',
         'PORT': '3306',
     }
 }
@@ -134,11 +135,11 @@ USE_TZ = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
-STATIC_ROOT = os.path.join(BASE_DIR,'static') 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 CORS_ORIGIN_ALLOW_ALL = True
 
-#EMAIL CONFIG
+# EMAIL CONFIG
 EMAIL_USE_TLS = True
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -167,7 +168,7 @@ S3DIRECT_REGION = 'ap-southeast-1'
 S3DIRECT_DESTINATIONS = {
     # Allow staff users to upload any MIME type
     'borrower_img': {
-        'key': 'uploads/borrowers/images', 
+        'key': 'uploads/borrowers/images',
         'auth': lambda u: u.is_staff,
         'allowed': ['image/jpeg', 'image/png'],
     },
@@ -180,5 +181,3 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'django_facebook.auth_backends.FacebookBackend'
 ]
-
-

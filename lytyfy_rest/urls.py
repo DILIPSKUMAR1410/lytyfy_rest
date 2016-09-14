@@ -13,7 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url,include
+from django.conf.urls import url, include
 from django.contrib import admin
 from lytyfy_rest import views
 urlpatterns = [
@@ -39,7 +39,8 @@ urlpatterns = [
     url(r'^api/FBToken/$', views.FBToken.as_view()),
     url(r'^api/lender/verify/$', views.VerifyInvestor.as_view()),
     url(r'^api/lender/dashboard$', views.DashBoardApi.as_view()),
-    url(r'^api/lender/wallet/transactions$', views.WalletTransactions.as_view()),
-    
+    url(r'^api/lender/wallet/transactions$',
+        views.WalletTransactions.as_view()),
+
 
 ]

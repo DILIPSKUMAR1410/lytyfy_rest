@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invite',
             name='uid',
-            field=models.CharField(max_length=30, null=True),
+            field=models.CharField(max_length=32, null=True),
         ),
         migrations.AddField(
             model_name='lender',
@@ -53,4 +53,9 @@ class Migration(migrations.Migration):
             name='created',
             field=models.DateTimeField(default=timezone.now()),
         ),
+        migrations.AddField(
+            model_name='token',
+            name='social_token',
+            field=models.CharField(max_length=120, null=True),
+        )
     ]
