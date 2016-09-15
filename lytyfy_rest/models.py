@@ -36,7 +36,7 @@ class LenderWithdrawalRequest(models.Model):
                       (2, 'Pending'))
     lender = models.ForeignKey(Lender)
     amount = models.FloatField(default=0.0)
-    requested_at = models.DateTimeField(default=timezone.now())
+    requested_at = models.DateTimeField(default=timezone.now)
     account_number = models.CharField(max_length=30)
     ifsc_code = models.CharField(max_length=30)
     account_name = models.CharField(max_length=30)
@@ -50,7 +50,7 @@ class Project(models.Model):
     targetAmount = models.FloatField(default=0.0)
     place = models.CharField(max_length=30)
     description = models.TextField()
-    enlistDate = models.DateTimeField(default=timezone.now())
+    enlistDate = models.DateTimeField(default=timezone.now)
     offlistDate = models.DateTimeField()
 
     def raiseAmount(self, amount=None):
@@ -67,7 +67,7 @@ class LenderDeviabTransaction(models.Model):
                        (2, 'NB'))
     lender = models.ForeignKey(Lender, related_name="lender_transactions")
     project = models.ForeignKey(Project, related_name="project_transactions")
-    timestamp = models.DateTimeField(default=timezone.now())
+    timestamp = models.DateTimeField(default=timezone.now)
     amount = models.FloatField(default=0.0)
     payment_id = models.IntegerField(default=0)
     status = models.CharField(max_length=30, null=True)
@@ -89,7 +89,7 @@ class LenderDeviabTransaction(models.Model):
 class Token(models.Model):
     user = models.ForeignKey(User)
     token = models.CharField(max_length=40, primary_key=True)
-    created = models.DateTimeField(default=timezone.now())
+    created = models.DateTimeField(default=timezone.now)
     social_token = models.TextField(null=True)
 
     def save(self, *args, **kwargs):

@@ -36,22 +36,22 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='lenderdeviabtransaction',
             name='timestamp',
-            field=models.DateTimeField(default=timezone.now()),
+            field=models.DateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
             model_name='lenderwithdrawalrequest',
             name='requested_at',
-            field=models.DateTimeField(default=timezone.now()),
+            field=models.DateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
             model_name='project',
             name='enlistDate',
-            field=models.DateTimeField(default=timezone.now()),
+            field=models.DateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
             model_name='token',
             name='created',
-            field=models.DateTimeField(default=timezone.now()),
+            field=models.DateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AddField(
             model_name='token',
