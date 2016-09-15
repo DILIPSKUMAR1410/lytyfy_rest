@@ -157,7 +157,7 @@ class GetLenderDetail(APIView):
         try:
             lender = request.token.user.lender
             lenderDetails = {'first_name': lender.first_name, 'last_name': lender.last_name, 'email': lender.email,
-                             'mobile_number': lender.mobile_number, 'dob': lender.dob, 'gender': lender.get_gender_display()}
+                             'mobile_number': lender.mobile_number, 'dob': lender.dob, 'gender': lender.gender}
             return Response(lenderDetails, status=status.HTTP_200_OK)
         except:
             return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
