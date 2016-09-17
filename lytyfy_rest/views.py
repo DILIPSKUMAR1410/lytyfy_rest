@@ -421,7 +421,6 @@ class ListProject(APIView):
 
 
 class ResetPassword(APIView):
-<< << << < HEAD
     def post(self, request, format=None):
         params = request.data
         if params:
