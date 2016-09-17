@@ -8,3 +8,6 @@ html5lib==0.999
 httplib2==0.8
 lockfile==0.8
 django-s3direct
+django_facebook
+sendgrid
+google-api-python-client
