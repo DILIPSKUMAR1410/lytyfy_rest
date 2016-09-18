@@ -475,7 +475,6 @@ class RepaymentToInvestors(APIView):
             return Response({'msg': "Succesfully wallet credited"}, status=status.HTTP_200_OK)
 
 
-== == == =
 
     def post(self, request, format=None):
         params = request.data
