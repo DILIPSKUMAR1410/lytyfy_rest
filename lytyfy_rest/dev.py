@@ -181,3 +181,5 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'django_facebook.auth_backends.FacebookBackend'
 ]
+
+VERIFIER_EMAIL = "jsmith503@gmail.com"

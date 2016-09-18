@@ -240,7 +240,7 @@ class Register(APIView):
                         {
                             "to": [
                                 {
-                                    "email": "jsmith503@gmail.com"
+                                    "email": settings.VERIFIER_EMAIL 
                                 }
                             ],
                             "substitutions": {
