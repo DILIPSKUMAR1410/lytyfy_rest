@@ -148,7 +148,7 @@ class LenderCurrentStatus(models.Model):
             self.interest_left += self.principal_left * .6 / 100
             self.interest_repaid += amount
             self.tenure_left -= 1
-            self.emr = self.principal_left / self.tenure_left + self.interest_left
+            self.emr = self.principal_left / self.tenure_left + self.interest_left if self.tenure_left else 0
 
             # remove after floating issue resolved
             self.interest_left = round(self.interest_left, 2)
@@ -163,7 +163,7 @@ class LenderCurrentStatus(models.Model):
 
             self.interest_left = self.principal_left * .6 / 100
             self.tenure_left -= 1
-            self.emr = self.principal_left / self.tenure_left + self.interest_left
+            self.emr = self.principal_left / self.tenure_left + self.interest_left if self.tenure_left else 0
 
             # remove after floating issue resolved
             self.interest_left = round(self.interest_left, 2)
