@@ -159,7 +159,10 @@ class TransactionFromWallet(APIView):
     def post(self, request, format=None):
         params = dict(request.data)
         lender = request.token.user.lender
-        if params and params['status'] == "success":
+        balance = lender.wallet.balance
+        
+
+        if params and params['status'] == "success" and float(params['amount']) <= balance:
             trasaction = {}
             trasaction['lender'] = lender.id
             trasaction['project'] = params['projectId']
@@ -174,17 +177,20 @@ class TransactionFromWallet(APIView):
             trasaction['transactions_type'] = "debit"
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
             if serializer.is_valid():
+                lender.wallet.debit(float(params['amount']))
                 serializer.save()
                 Project.objects.get(pk=trasaction['project']).raiseAmount(
                     trasaction['amount']).save()
                 got, created = LenderCurrentStatus.objects.get_or_create(
                     lender_id=trasaction['lender'], project_id=trasaction['project'])
                 got.updateCurrentStatus(trasaction['amount'])
-                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/account-dashboard")
+
+
+                return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
             else:
-                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/account-dashboard")
+                return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/account-dashboard")
+            return Response({'error': "invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetLenderDetail(APIView):

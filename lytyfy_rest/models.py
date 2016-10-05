@@ -30,6 +30,10 @@ class LenderWallet(models.Model):
         self.balance += amount
         self.save()
 
+    def debit(self, amount):
+        self.balance -= amount
+        self.save()
+
 
 class LenderWithdrawalRequest(models.Model):
 

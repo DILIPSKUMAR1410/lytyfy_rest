@@ -92,8 +92,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'develop',
-        'USER': 'mrrobot',
-        'PASSWORD': 'DiVaNe_47',
+        'USER': 'Neha',
+        'PASSWORD': 'qwerty',
         # Or an IP Address that your DB is hosted on
         'HOST': 'lytyfy-rds-dev.c4py8eplysvm.ap-southeast-1.rds.amazonaws.com',
         'PORT': '3306',
