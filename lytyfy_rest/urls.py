@@ -41,5 +41,6 @@ urlpatterns = [
     url(r'^api/lender/dashboard$', views.DashBoardApi.as_view()),
     url(r'^api/lender/wallet/transactions$',
         views.WalletTransactions.as_view()),
+    url(r'^api/transaction/wallet$', views.TransactionFromWallet.as_view()),
 
 ]

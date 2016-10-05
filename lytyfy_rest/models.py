@@ -68,7 +68,8 @@ class LenderDeviabTransaction(models.Model):
 
     PAYMENT_CHOICES = ((0, 'CC'),
                        (1, 'DC'),
-                       (2, 'NB'))
+                       (2, 'NB'),
+                       (3, 'WL'))
     lender = models.ForeignKey(Lender, related_name="lender_transactions")
     project = models.ForeignKey(Project, related_name="project_transactions")
     timestamp = models.DateTimeField(default=timezone.now)

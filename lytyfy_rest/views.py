@@ -20,6 +20,7 @@ from django.core.mail import send_mail
 from django.db.models import Sum
 from django.conf import settings
 from open_facebook.api import OpenFacebook, FacebookAuthorization
+from datetime import datetime
 
 
 class HomePageApi(APIView):
@@ -135,6 +136,7 @@ class TransactionFormCapture(APIView):
             trasaction['customer_phone'] = params['phone'][0]
             trasaction['customer_name'] = params['firstname'][0]
             trasaction['product_info'] = params['productinfo'][0]
+            trasaction['transactions_type'] = "debit"
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
             if serializer.is_valid():
                 serializer.save()
@@ -148,6 +150,41 @@ class TransactionFormCapture(APIView):
                 return redirect("http://" + settings.CLIENT_DOMAIN + "/#/dashboard")
         else:
             return redirect("http://" + settings.CLIENT_DOMAIN + "/#/dashboard")
+
+
+class TransactionFromWallet(APIView):
+    @token_required
+    @csrf_exempt
+    @transaction.atomic
+    def post(self, request, format=None):
+        params = dict(request.data)
+        lender = request.token.user.lender
+        if params and params['status'] == "success":
+            trasaction = {}
+            trasaction['lender'] = lender.id
+            trasaction['project'] = params['projectId']
+            trasaction['amount'] = float(params['amount'])
+            trasaction['customer_email'] = lender.email
+            trasaction['payment_id'] = str(randint(1000000, 9999999))
+            trasaction['status'] = "success"
+            trasaction['payment_mode'] = 3
+            trasaction['customer_phone'] = lender.mobile_number
+            trasaction['customer_name'] = lender.first_name
+            trasaction['product_info'] = params['project_info']
+            trasaction['transactions_type'] = "debit"
+            serializer = LenderDeviabTransactionSerializer(data=trasaction)
+            if serializer.is_valid():
+                serializer.save()
+                Project.objects.get(pk=trasaction['project']).raiseAmount(
+                    trasaction['amount']).save()
+                got, created = LenderCurrentStatus.objects.get_or_create(
+                    lender_id=trasaction['lender'], project_id=trasaction['project'])
+                got.updateCurrentStatus(trasaction['amount'])
+                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/account-dashboard")
+            else:
+                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/account-dashboard")
+        else:
+            return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/account-dashboard")
 
 
 class GetLenderDetail(APIView):
@@ -400,6 +437,7 @@ class ListProject(APIView):
         projects = Project.objects.prefetch_related('lenders').all()
         data = []
         for project in projects:
+            project.offlistDate = datetime.strptime('Jun 1 2017  1:33PM', '%b %d %Y %I:%M%p')
             project_detail = {}
             project_detail['project_id'] = project.id
             project_detail['borrowers'] = project.borrowers.values(
@@ -489,6 +527,9 @@ class RepaymentToInvestors(APIView):
                     return Response({'error': "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'msg': "Succesfully wallet credited"}, status=status.HTTP_200_OK)
         return Response({'error': "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
 
 
 class FBToken(APIView):
