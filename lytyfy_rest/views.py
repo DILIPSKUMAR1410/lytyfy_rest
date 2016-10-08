@@ -209,7 +209,7 @@ class TransactionFormCapture(APIView):
             if serializer.is_valid():
                 if trasaction['wallet_money']:
                     Lender.objects.get(id=trasaction['lender']).wallet.debit(
-                        float(params['amount']))
+                        params['amount'])
                 serializer.save()
                 Project.objects.get(pk=trasaction['project']).raiseAmount(
                     trasaction['amount']).save()
