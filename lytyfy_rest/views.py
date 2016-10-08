@@ -212,11 +212,11 @@ class TransactionFormCapture(APIView):
                 got, created = LenderCurrentStatus.objects.get_or_create(
                     lender_id=trasaction['lender'], project_id=trasaction['project'])
                 got.updateCurrentStatus(trasaction['amount'])
-                return redirect("http://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
+                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
             else:
-                return redirect("http://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
+                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
         else:
-            return redirect("http://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
+            return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
 
 
 class TransactionFromWallet(APIView):
