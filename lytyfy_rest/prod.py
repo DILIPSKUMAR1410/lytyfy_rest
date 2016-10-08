@@ -167,10 +167,25 @@ S3DIRECT_REGION = 'ap-southeast-1'
 S3DIRECT_DESTINATIONS = {
     # Allow staff users to upload any MIME type
     'borrower_img': {
-        'key': 'uploads/borrowers/images', 
-        'auth': lambda u: u.is_staff,
+        'key': 'uploads/borrowers/images',
+        'auth': lambda u: u.is_superuser,
         'allowed': ['image/jpeg', 'image/png'],
     },
+    'product_img': {
+        'key': 'uploads/product/images',
+        'auth': lambda u: u.is_superuser,
+        'allowed': ['image/jpeg', 'image/png'],
+    },
+    'project_img': {
+        'key': 'uploads/project/images',
+        'auth': lambda u: u.is_superuser,
+        'allowed': ['image/jpeg', 'image/png'],
+    },
+    'field_partner_img': {
+        'key': 'uploads/partner/images',
+        'auth': lambda u: u.is_superuser,
+        'allowed': ['image/jpeg', 'image/png'],
+    }
 }
 
 FACEBOOK_APP_ID = "189201174829529"

@@ -14,11 +14,14 @@ class Lender(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30, null=True)
     mobile_number = models.CharField(max_length=13, null=True)
-    email = models.CharField(max_length=30, null=True)
+    email = models.CharField(max_length=60, null=True)
     user = models.OneToOneField(User, related_name='lender')
     avatar = models.CharField(max_length=30, null=True)
     gender = models.IntegerField(choices=GENDER_CHOICES, null=True)
     dob = models.CharField(max_length=30, null=True)
+
+    def __unicode__(self):
+        return self.first_name + " " + self.last_name
 
 
 class LenderWallet(models.Model):
@@ -50,15 +53,40 @@ class LenderWithdrawalRequest(models.Model):
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
 
 
+class Product(models.Model):
+    name = models.CharField(max_length=30)
+    description = models.TextField()
+    image_url = S3DirectField(dest='product_img',
+                              max_length=64, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class FieldPartner(models.Model):
+    name = models.CharField(max_length=30)
+    description = models.TextField()
+    avatar = S3DirectField(dest='field_partner_img',
+                           max_length=64, null=True, blank=True)
+    email = models.CharField(max_length=60, null=True)
+
+    def __unicode__(self):
+        return self.name
+
+
 class Project(models.Model):
 
-    title = models.CharField(max_length=30)
+    title = models.CharField(max_length=100)
     raisedAmount = models.FloatField(default=0.0)
     targetAmount = models.FloatField(default=0.0)
     place = models.CharField(max_length=30)
     description = models.TextField()
     enlistDate = models.DateTimeField(default=timezone.now)
     offlistDate = models.DateTimeField()
+    field_partner = models.ForeignKey(FieldPartner, null=True)
+    product = models.ForeignKey(Product, null=True)
+    image_url = S3DirectField(dest='project_img',
+                              max_length=64, null=True, blank=True)
 
     def raiseAmount(self, amount=None):
         self.raisedAmount += amount
@@ -154,7 +182,8 @@ class LenderCurrentStatus(models.Model):
             self.interest_left += self.principal_left * .6 / 100
             self.interest_repaid += amount
             self.tenure_left -= 1
-            self.emr = self.principal_left / self.tenure_left + self.interest_left if self.tenure_left else 0
+            self.emr = self.principal_left / self.tenure_left + \
+                self.interest_left if self.tenure_left else 0
 
             # remove after floating issue resolved
             self.interest_left = round(self.interest_left, 2)
@@ -169,7 +198,8 @@ class LenderCurrentStatus(models.Model):
 
             self.interest_left = self.principal_left * .6 / 100
             self.tenure_left -= 1
-            self.emr = self.principal_left / self.tenure_left + self.interest_left if self.tenure_left else 0
+            self.emr = self.principal_left / self.tenure_left + \
+                self.interest_left if self.tenure_left else 0
 
             # remove after floating issue resolved
             self.interest_left = round(self.interest_left, 2)

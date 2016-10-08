@@ -665,7 +665,7 @@ class FBToken(APIView):
                                         }
                                     ],
                                     "substitutions": {
-                                        "-link-": "http://" + settings.CLIENT_DOMAIN + "/#/register?uid=" + uid
+                                        "-link-": "https://" + settings.CLIENT_DOMAIN + "/#/register?uid=" + uid
                                     }
                                 }
                             ],
@@ -727,3 +727,15 @@ class VerifyInvestor(APIView):
             else:
                 return Response({'msg': "lender not found"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'msg': "Invalid Request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetProject(APIView):
+
+    def get(self, request, project_id, format=None):
+        project = Project.objects.select_related(
+            'product', 'field_partner').filter(id=project_id).values('title', 'raisedAmount', 'targetAmount', 'place',
+                                                                     'description', 'enlistDate', 'offlistDate', 'image_url',
+                                                                     'field_partner__name', 'field_partner__description',
+                                                                     'field_partner__avatar', 'product__name',
+                                                                     'product__description').first()
+        return Response(project, status=status.HTTP_200_OK)
