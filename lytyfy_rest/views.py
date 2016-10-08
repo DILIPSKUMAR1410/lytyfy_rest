@@ -20,7 +20,6 @@ from django.core.mail import send_mail
 from django.db.models import Sum
 from django.conf import settings
 from open_facebook.api import OpenFacebook, FacebookAuthorization
-from datetime import datetime
 
 
 class HomePageApi(APIView):
@@ -443,7 +442,6 @@ class ListProject(APIView):
         projects = Project.objects.prefetch_related('lenders').all()
         data = []
         for project in projects:
-            project.offlistDate = datetime.strptime('Jun 1 2017  1:33PM', '%b %d %Y %I:%M%p')
             project_detail = {}
             project_detail['project_id'] = project.id
             project_detail['borrowers'] = project.borrowers.values(
