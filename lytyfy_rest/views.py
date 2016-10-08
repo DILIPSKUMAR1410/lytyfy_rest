@@ -173,8 +173,8 @@ class TransactionFormData(APIView):
                     response['surl'] = "http://" + \
                         settings.HOST_DOMAIN + "/api/formcapture"
                     response['udf2'] = params['projectId']
-                    response['udf1'] = str(lender.id)
-                    response['udf3'] = str(0)
+                    response['udf1'] = lender.id
+                    response['udf3'] = 0
                     response['amount'] = params['amount']
                     response['txnid'] = txnid
                     return Response(response, status=status.HTTP_200_OK)
