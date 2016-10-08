@@ -207,7 +207,7 @@ class TransactionFormCapture(APIView):
             trasaction['transactions_type'] = "debit"
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
             if serializer.is_valid():
-                if transaction['wallet_money']:
+                if trasaction['wallet_money']:
                     Lender.objects.get(id=trasaction['lender']).wallet.debit(
                         float(params['amount']))
                 serializer.save()
