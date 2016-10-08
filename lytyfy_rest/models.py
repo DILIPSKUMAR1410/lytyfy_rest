@@ -90,6 +90,7 @@ class LenderDeviabTransaction(models.Model):
     error_message = models.CharField(max_length=30, null=True)
     notification = models.CharField(max_length=30, null=True)
     transactions_type = models.CharField(max_length=30)
+    wallet_money = models.FloatField(default=0.0)
 
     def __unicode__(self):
         return str(self.payment_id)
