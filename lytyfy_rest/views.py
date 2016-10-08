@@ -93,7 +93,7 @@ class TransactionFormData(APIView):
                     return Response({'error': "Project not found"}, status=status.HTTP_400_BAD_REQUEST)
                 txnid = str(randint(1000000, 9999999))
                 hashing = "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project['title'] + "|" + data[
-                    'first_name'] + "|" + data['email'] + "|" + params['lenderId'] + "|" + params['projectId'] + "|||||||||" + "k1wOOh0b"
+                    'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|||||||||" + "k1wOOh0b"
                 response = {}
                 response['firstname'] = data['first_name']
                 response['email'] = data['email']
