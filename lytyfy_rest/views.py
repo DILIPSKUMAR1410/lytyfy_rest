@@ -195,7 +195,7 @@ class TransactionFormCapture(APIView):
             trasaction = {}
             trasaction['lender'] = params['udf1'][0]
             trasaction['project'] = params['udf2'][0]
-            transaction['wallet_money'] = params['udf3'][0]
+            trasaction['wallet_money'] = params['udf3'][0]
             trasaction['amount'] = float(params['amount'][0])
             trasaction['customer_email'] = params['email'][0]
             trasaction['payment_id'] = params['payuMoneyId'][0]
