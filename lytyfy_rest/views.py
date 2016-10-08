@@ -76,6 +76,7 @@ class LenderPortfolio(APIView):
 
 
 class TransactionFormData(APIView):
+
     @transaction.atomic
     @token_required
     def get(self, request, format=None):
@@ -96,9 +97,11 @@ class TransactionFormData(APIView):
                     trasaction['payment_mode'] = 3
                     trasaction['customer_phone'] = lender.mobile_number
                     trasaction['customer_name'] = lender.first_name
-                    trasaction['product_info'] = Project.objects.get(pk=params['projectId']).title
+                    trasaction['product_info'] = Project.objects.get(
+                        pk=params['projectId']).title
                     trasaction['transactions_type'] = "debit"
-                    serializer = LenderDeviabTransactionSerializer(data=trasaction)
+                    serializer = LenderDeviabTransactionSerializer(
+                        data=trasaction)
                     if serializer.is_valid():
                         lender.wallet.debit(float(params['amount']))
                         serializer.save()
@@ -110,7 +113,7 @@ class TransactionFormData(APIView):
                         return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
                     else:
                         return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
-                   
+
                 else:
                     payU_amount = float(params['amount']) - balance
                     try:
@@ -134,9 +137,9 @@ class TransactionFormData(APIView):
                         response['productinfo'] = project['title']
                         response['service_provider'] = "payu_paisa"
                         response['hash'] = hashlib.sha512(hashing).hexdigest()
-                        response['furl'] = "http://" + \
+                        response['furl'] = "https://" + \
                             settings.HOST_DOMAIN + "/api/formcapture"
-                        response['surl'] = "http://" + \
+                        response['surl'] = "https://" + \
                             settings.HOST_DOMAIN + "/api/formcapture"
                         response['udf2'] = params['projectId']
                         response['udf1'] = str(lender.id)
@@ -168,9 +171,9 @@ class TransactionFormData(APIView):
                     response['productinfo'] = project['title']
                     response['service_provider'] = "payu_paisa"
                     response['hash'] = hashlib.sha512(hashing).hexdigest()
-                    response['furl'] = "http://" + \
+                    response['furl'] = "https://" + \
                         settings.HOST_DOMAIN + "/api/formcapture"
-                    response['surl'] = "http://" + \
+                    response['surl'] = "https://" + \
                         settings.HOST_DOMAIN + "/api/formcapture"
                     response['udf2'] = params['projectId']
                     response['udf1'] = lender.id
@@ -181,7 +184,7 @@ class TransactionFormData(APIView):
                 except:
                     return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-                
+
 class TransactionFormCapture(APIView):
 
     @csrf_exempt
@@ -205,7 +208,8 @@ class TransactionFormCapture(APIView):
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
             if serializer.is_valid():
                 if transaction['wallet_money']:
-                    Lender.objects.get(id=trasaction['lender']).wallet.debit(float(params['amount']))
+                    Lender.objects.get(id=trasaction['lender']).wallet.debit(
+                        float(params['amount']))
                 serializer.save()
                 Project.objects.get(pk=trasaction['project']).raiseAmount(
                     trasaction['amount']).save()
@@ -220,6 +224,7 @@ class TransactionFormCapture(APIView):
 
 
 class TransactionFromWallet(APIView):
+
     @token_required
     @csrf_exempt
     @transaction.atomic
@@ -227,7 +232,6 @@ class TransactionFromWallet(APIView):
         params = dict(request.data)
         lender = request.token.user.lender
         balance = lender.wallet.balance
-        
 
         if params and params['status'] == "success" and float(params['amount']) <= balance:
             trasaction = {}
@@ -251,7 +255,6 @@ class TransactionFromWallet(APIView):
                 got, created = LenderCurrentStatus.objects.get_or_create(
                     lender_id=trasaction['lender'], project_id=trasaction['project'])
                 got.updateCurrentStatus(trasaction['amount'])
-
 
                 return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
             else:
@@ -599,9 +602,6 @@ class RepaymentToInvestors(APIView):
                     return Response({'error': "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
             return Response({'msg': "Succesfully wallet credited"}, status=status.HTTP_200_OK)
         return Response({'error': "Invalid request"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-
 
 
 class FBToken(APIView):
