@@ -510,7 +510,7 @@ class ChangePassword(APIView):
 class ListProject(APIView):
 
     def get(self, request, format=None):
-        projects = Project.objects.prefetch_related('lenders').all()
+        projects = Project.objects.prefetch_related('lenders').all().order_by('-offlistDate')
         data = []
         for project in projects:
             project_detail = {}
@@ -732,14 +732,16 @@ class VerifyInvestor(APIView):
 class GetProject(APIView):
 
     def get(self, request, project_id, format=None):
-        project = Project.objects.select_related('product', 'field_partner').prefetch_related('gallery').get(id=project_id)
+        project = Project.objects.select_related(
+            'product', 'field_partner').prefetch_related('gallery').get(id=project_id)
         project_detail = {}
         project_detail['project_id'] = project.id
         project_detail['field_partner__name'] = project.field_partner.name
         project_detail[
             'field_partner__description'] = project.field_partner.description
         project_detail['field_partner__avatar'] = project.field_partner.avatar
-        project_detail['gallery__image_url'] = project.gallery.values_list('image_url',flat=True)
+        project_detail['gallery__image_url'] = project.gallery.values_list(
+            'image_url', flat=True)
         project_detail['image_url'] = project.image_url
         project_detail['customer_img'] = project.customer_img
         project_detail['customer_story'] = project.customer_story
