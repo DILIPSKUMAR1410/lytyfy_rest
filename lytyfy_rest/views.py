@@ -29,7 +29,7 @@ class HomePageApi(APIView):
         raised = int(
             sum(Project.objects.all().values_list('raisedAmount', flat=True)))
         borrowers = Borrower.objects.all().count()
-        return Response({'backers': investors+18, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
+        return Response({'backers': investors + 18, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
 
 
 class DashBoardApi(APIView):
@@ -58,10 +58,12 @@ class WalletTransactions(APIView):
         lender = request.token.user.lender
         ldt = LenderDeviabTransaction.objects.select_related(
             'project').filter(lender=lender)
-        data = ldt.values('amount', 'payment_id', 'timestamp',
+        data = ldt.values('amount', 'wallet_money', 'payment_id', 'timestamp',
                           'project__title', 'transactions_type').order_by('-timestamp')
         for datum in data:
             datum['timestamp'] = datum['timestamp'].strftime("%d, %b %Y | %r")
+            if datum['wallet_money']:
+                datum['amount'] += datum['wallet_money']
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -510,7 +512,8 @@ class ChangePassword(APIView):
 class ListProject(APIView):
 
     def get(self, request, format=None):
-        projects = Project.objects.prefetch_related('lenders').all().order_by('-offlistDate')
+        projects = Project.objects.prefetch_related(
+            'lenders').all().order_by('-offlistDate')
         data = []
         for project in projects:
             project_detail = {}
