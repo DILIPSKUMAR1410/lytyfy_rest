@@ -187,7 +187,18 @@ S3DIRECT_DESTINATIONS = {
         'key': 'uploads/partner/images',
         'auth': lambda u: u.is_superuser,
         'allowed': ['image/jpeg', 'image/png'],
+    },
+    'project_gallery': {
+        'key': 'uploads/project/gallery/images',
+        'auth': lambda u: u.is_superuser,
+        'allowed': ['image/jpeg', 'image/png'],
+    },
+    'customer_img': {
+        'key': 'uploads/project/customer/images',
+        'auth': lambda u: u.is_superuser,
+        'allowed': ['image/jpeg', 'image/png'],
     }
+
 }
 
 FACEBOOK_APP_ID = "189201174829529"

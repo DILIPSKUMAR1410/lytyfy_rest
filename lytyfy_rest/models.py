@@ -88,6 +88,8 @@ class Project(models.Model):
     image_url = S3DirectField(dest='project_img',
                               max_length=64, null=True, blank=True)
     customer_story = models.TextField(null=True, blank=True)
+    customer_img = S3DirectField(dest='customer_img',
+                                 max_length=64, null=True, blank=True)
 
     def raiseAmount(self, amount=None):
         self.raisedAmount += amount
@@ -222,3 +224,12 @@ class Borrower(models.Model):
 
     def __unicode__(self):
         return self.first_name + " " + self.last_name
+
+
+class ProjectGallery(models.Model):
+    image_url = S3DirectField(dest='project_gallery',
+                              max_length=64, null=True, blank=True)
+    project = models.ForeignKey(Project, related_name="gallery")
+
+    def __unicode__(self):
+        return self.image_url
