@@ -80,13 +80,14 @@ class Project(models.Model):
     raisedAmount = models.FloatField(default=0.0)
     targetAmount = models.FloatField(default=0.0)
     place = models.CharField(max_length=30)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     enlistDate = models.DateTimeField(default=timezone.now)
     offlistDate = models.DateTimeField()
     field_partner = models.ForeignKey(FieldPartner, null=True)
     product = models.ForeignKey(Product, null=True)
     image_url = S3DirectField(dest='project_img',
                               max_length=64, null=True, blank=True)
+    customer_story = models.TextField(null=True, blank=True)
 
     def raiseAmount(self, amount=None):
         self.raisedAmount += amount

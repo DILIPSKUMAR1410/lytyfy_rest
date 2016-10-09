@@ -732,10 +732,9 @@ class VerifyInvestor(APIView):
 class GetProject(APIView):
 
     def get(self, request, project_id, format=None):
-        project = Project.objects.select_related(
-            'product', 'field_partner').filter(id=project_id).values('title', 'raisedAmount', 'targetAmount', 'place',
-                                                                     'description', 'enlistDate', 'offlistDate', 'image_url',
-                                                                     'field_partner__name', 'field_partner__description',
-                                                                     'field_partner__avatar', 'product__name',
-                                                                     'product__description').first()
+        project = Project.objects.select_related('product', 'field_partner').filter(id=project_id).\
+            values('title', 'raisedAmount', 'targetAmount', 'place',
+                   'description', 'enlistDate', 'offlistDate', 'image_url',
+                   'customer_story', 'field_partner__name',
+                   'field_partner__description', 'field_partner__avatar').first()
         return Response(project, status=status.HTTP_200_OK)
