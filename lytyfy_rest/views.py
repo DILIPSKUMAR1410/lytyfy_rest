@@ -92,7 +92,8 @@ class TransactionFormData(APIView):
                     trasaction = {}
                     trasaction['lender'] = lender.id
                     trasaction['project'] = params['projectId']
-                    trasaction['amount'] = float(params['amount'])
+                    trasaction['amount'] = 0
+                    trasaction['wallet_money'] = float(params['amount'])
                     trasaction['customer_email'] = lender.email
                     trasaction['payment_id'] = str(randint(1000000, 9999999))
                     trasaction['status'] = "success"

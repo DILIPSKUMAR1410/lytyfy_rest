@@ -8,7 +8,7 @@ class LenderDeviabTransactionSerializer(serializers.ModelSerializer):
         model = LenderDeviabTransaction
 
         fields = ['lender', 'project', 'amount', 'payment_id', 'status', 'payment_mode',
-                  'customer_email', 'customer_phone', 'customer_name', 'product_info', 'transactions_type']
+                  'customer_email', 'customer_phone', 'customer_name', 'product_info', 'transactions_type','wallet_money']
 
 class LenderSerializer(serializers.ModelSerializer):
 
