@@ -29,7 +29,7 @@ class HomePageApi(APIView):
         raised = int(
             sum(Project.objects.all().values_list('raisedAmount', flat=True)))
         borrowers = Borrower.objects.all().count()
-        return Response({'backers': investors, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
+        return Response({'backers': investors+18, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
 
 
 class DashBoardApi(APIView):
