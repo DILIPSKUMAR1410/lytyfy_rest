@@ -38,8 +38,7 @@ def getFormDataForPayU(lender, project, payu_amount, wallet_money):
     response['productinfo'] = project.title
     response['service_provider'] = "payu_paisa"
     response['hash'] = hashlib.sha512(hashing).hexdigest()
-    response['furl'] = "https://" + \
-        settings.HOST_DOMAIN + "/api/formcapture"
+    response['furl'] = settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction"
     response['surl'] = "https://" + \
         settings.HOST_DOMAIN + "/api/formcapture"
     response['udf2'] = project.id
