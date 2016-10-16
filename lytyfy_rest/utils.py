@@ -44,7 +44,7 @@ def getFormDataForPayU(lender, project, payu_amount, wallet_money):
         settings.HOST_DOMAIN + "/api/formcapture"
     response['udf2'] = project.id
     response['udf1'] = lender.id
-    response['udf3'] = wallet_money
-    response['amount'] = payu_amount
+    response['udf3'] = str(wallet_money)
+    response['amount'] = str(payu_amount)
     response['txnid'] = txnid
     return response
