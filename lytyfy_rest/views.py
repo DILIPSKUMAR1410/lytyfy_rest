@@ -134,14 +134,14 @@ class TransactionFormData(APIView):
                             return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
 
                         txnid = str(randint(1000000, 9999999))
-                        hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project['title'] + "|" + data[
+                        hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project.title + "|" + data[
                             'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
                         response = {}
                         response['firstname'] = data['first_name']
                         response['email'] = data['email']
                         response['phone'] = data['mobile_number']
                         response['key'] = "vz70Zb"
-                        response['productinfo'] = project['title']
+                        response['productinfo'] = project.title
                         response['service_provider'] = "payu_paisa"
                         response['hash'] = hashlib.sha512(
                             hashing).hexdigest()
@@ -161,14 +161,14 @@ class TransactionFormData(APIView):
                     if not data['first_name'] or not data['email'] and not data['mobile_number']:
                         return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
                     txnid = str(randint(1000000, 9999999))
-                    hashing = "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project['title'] + "|" + data[
+                    hashing = "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project.title + "|" + data[
                         'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(0) + "||||||||" + "k1wOOh0b"
                     response = {}
                     response['firstname'] = data['first_name']
                     response['email'] = data['email']
                     response['phone'] = data['mobile_number']
                     response['key'] = "vz70Zb"
-                    response['productinfo'] = project['title']
+                    response['productinfo'] = project.title
                     response['service_provider'] = "payu_paisa"
                     response['hash'] = hashlib.sha512(hashing).hexdigest()
                     response['furl'] = "https://" + \
