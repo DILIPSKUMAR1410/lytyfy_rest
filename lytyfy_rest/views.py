@@ -167,7 +167,10 @@ class TransactionFormCapture(APIView):
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
             if serializer.is_valid():
                 if trasaction['wallet_money']:
-                    Lender.objects.get(id=trasaction['lender']).wallet.debit(
+                    lender = Lender.objects.get(id=trasaction['lender'])
+                    if trasaction['wallet_money'] > lender.balance:
+                        return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction") 
+                    lender.wallet.debit(
                         trasaction['wallet_money'])
                 serializer.save()
                 combined_amount = trasaction[
