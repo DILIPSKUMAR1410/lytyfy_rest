@@ -476,7 +476,7 @@ class ListProject(APIView):
 
     def get(self, request, format=None):
         projects = Project.objects.prefetch_related(
-            'lenders').all().order_by('-offlistDate')
+            'lenders').select_related('field_partner').all().order_by('-offlistDate')
         data = []
         for project in projects:
             project_detail = {}
@@ -493,6 +493,7 @@ class ListProject(APIView):
             project_detail['offlistDate'] = project.offlistDate
             project_detail['repayment_term'] = 8
             project_detail['repayment_schedule'] = "Monthly"
+            project_detail['field_partner'] = project.field_partner.name
             project_detail[
                 'status'] = "running" if project.offlistDate > timezone.now() else "completed"
             data.append(project_detail)
