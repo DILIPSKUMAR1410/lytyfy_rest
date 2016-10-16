@@ -214,7 +214,8 @@ class TransactionFormCapture(APIView):
                     Lender.objects.get(id=trasaction['lender']).wallet.debit(
                         trasaction['wallet_money'])
                 serializer.save()
-                combined_amount = trasaction['wallet_money'] + trasaction['amount']
+                combined_amount = trasaction[
+                    'wallet_money'] + trasaction['amount']
                 Project.objects.get(pk=trasaction['project']).raiseAmount(
                     combined_amount).save()
                 got, created = LenderCurrentStatus.objects.get_or_create(
