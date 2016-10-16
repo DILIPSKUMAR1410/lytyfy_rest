@@ -41,7 +41,6 @@ urlpatterns = [
     url(r'^api/lender/dashboard$', views.DashBoardApi.as_view()),
     url(r'^api/lender/wallet/transactions$',
         views.WalletTransactions.as_view()),
-    url(r'^api/transaction/wallet$', views.TransactionFromWallet.as_view()),
     url(r'^api/projects/(?P<project_id>\d+)$',
         views.GetProject.as_view()),
 

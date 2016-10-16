@@ -87,11 +87,12 @@ class TransactionFormData(APIView):
         balance = lender.wallet.balance
         try:
             if params.get('amount', None) and params.get('projectId', None):
-                project = Project.objects.filter(pk=params['projectId']).first()
+                project = Project.objects.filter(
+                    pk=params['projectId']).first()
                 if not project:
                     return Response({'error': "Project not found"}, status=status.HTTP_400_BAD_REQUEST)
                 target_balance = project.targetAmount - project.raisedAmount
-                if target_balance < float(params['amount']) :
+                if target_balance < float(params['amount']):
                     return Response({'error': "Cant invest more than expected"}, status=status.HTTP_400_BAD_REQUEST)
                 if request.GET.get('walletCheck', False) == "true":
                     # Internal transaction
@@ -102,7 +103,8 @@ class TransactionFormData(APIView):
                         trasaction['amount'] = 0
                         trasaction['wallet_money'] = float(params['amount'])
                         trasaction['customer_email'] = lender.email
-                        trasaction['payment_id'] = str(randint(1000000, 9999999))
+                        trasaction['payment_id'] = str(
+                            randint(1000000, 9999999))
                         trasaction['status'] = "success"
                         trasaction['payment_mode'] = 3
                         trasaction['customer_phone'] = lender.mobile_number
@@ -131,7 +133,7 @@ class TransactionFormData(APIView):
                                     'email': lender.email, 'mobile_number': lender.mobile_number}
                             if not data['first_name'] or not data['email'] and not data['mobile_number']:
                                 return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
-                            
+
                             txnid = str(randint(1000000, 9999999))
                             hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project['title'] + "|" + data[
                                 'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
@@ -142,7 +144,8 @@ class TransactionFormData(APIView):
                             response['key'] = "vz70Zb"
                             response['productinfo'] = project['title']
                             response['service_provider'] = "payu_paisa"
-                            response['hash'] = hashlib.sha512(hashing).hexdigest()
+                            response['hash'] = hashlib.sha512(
+                                hashing).hexdigest()
                             response['furl'] = "https://" + \
                                 settings.HOST_DOMAIN + "/api/formcapture"
                             response['surl'] = "https://" + \
@@ -221,46 +224,6 @@ class TransactionFormCapture(APIView):
                 return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
         else:
             return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
-
-
-class TransactionFromWallet(APIView):
-
-    @token_required
-    @csrf_exempt
-    @transaction.atomic
-    def post(self, request, format=None):
-        params = dict(request.data)
-        lender = request.token.user.lender
-        balance = lender.wallet.balance
-
-        if params and params['status'] == "success" and float(params['amount']) <= balance:
-            trasaction = {}
-            trasaction['lender'] = lender.id
-            trasaction['project'] = params['projectId']
-            trasaction['amount'] = float(params['amount'])
-            trasaction['customer_email'] = lender.email
-            trasaction['payment_id'] = str(randint(1000000, 9999999))
-            trasaction['status'] = "success"
-            trasaction['payment_mode'] = 3
-            trasaction['customer_phone'] = lender.mobile_number
-            trasaction['customer_name'] = lender.first_name
-            trasaction['product_info'] = params['project_info']
-            trasaction['transactions_type'] = "debit"
-            serializer = LenderDeviabTransactionSerializer(data=trasaction)
-            if serializer.is_valid():
-                lender.wallet.debit(float(params['amount']))
-                serializer.save()
-                Project.objects.get(pk=trasaction['project']).raiseAmount(
-                    trasaction['amount']).save()
-                got, created = LenderCurrentStatus.objects.get_or_create(
-                    lender_id=trasaction['lender'], project_id=trasaction['project'])
-                got.updateCurrentStatus(trasaction['amount'])
-
-                return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
-            else:
-                return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({'error': "invalid amount"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetLenderDetail(APIView):
