@@ -85,87 +85,84 @@ class TransactionFormData(APIView):
         params = request.GET
         lender = request.token.user.lender
         balance = lender.wallet.balance
-        if params.get('amount', None) and params.get('projectId', None):
-            if request.GET.get('walletCheck', False) == "true":
-                # Internal transaction
-                if float(params['amount']) <= balance:
-                    trasaction = {}
-                    trasaction['lender'] = lender.id
-                    trasaction['project'] = params['projectId']
-                    trasaction['amount'] = 0
-                    trasaction['wallet_money'] = float(params['amount'])
-                    trasaction['customer_email'] = lender.email
-                    trasaction['payment_id'] = str(randint(1000000, 9999999))
-                    trasaction['status'] = "success"
-                    trasaction['payment_mode'] = 3
-                    trasaction['customer_phone'] = lender.mobile_number
-                    trasaction['customer_name'] = lender.first_name
-                    trasaction['product_info'] = Project.objects.get(
-                        pk=params['projectId']).title
-                    trasaction['transactions_type'] = "debit"
-                    serializer = LenderDeviabTransactionSerializer(
-                        data=trasaction)
-                    if serializer.is_valid():
-                        lender.wallet.debit(float(params['amount']))
-                        serializer.save()
-                        Project.objects.get(pk=trasaction['project']).raiseAmount(
-                            trasaction['amount']).save()
-                        got, created = LenderCurrentStatus.objects.get_or_create(
-                            lender_id=trasaction['lender'], project_id=trasaction['project'])
-                        got.updateCurrentStatus(trasaction['amount'])
-                        return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
-                    else:
-                        return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if params.get('amount', None) and params.get('projectId', None):
+                project = Project.objects.filter(pk=params['projectId']).first()
+                if not project:
+                    return Response({'error': "Project not found"}, status=status.HTTP_400_BAD_REQUEST)
+                target_balance = project.targetAmount - project.raisedAmount
+                if target_balance < float(params['amount']) :
+                    return Response({'error': "Cant invest more than expected"}, status=status.HTTP_400_BAD_REQUEST)
+                if request.GET.get('walletCheck', False) == "true":
+                    # Internal transaction
+                    if float(params['amount']) <= balance:
+                        trasaction = {}
+                        trasaction['lender'] = lender.id
+                        trasaction['project'] = params['projectId']
+                        trasaction['amount'] = 0
+                        trasaction['wallet_money'] = float(params['amount'])
+                        trasaction['customer_email'] = lender.email
+                        trasaction['payment_id'] = str(randint(1000000, 9999999))
+                        trasaction['status'] = "success"
+                        trasaction['payment_mode'] = 3
+                        trasaction['customer_phone'] = lender.mobile_number
+                        trasaction['customer_name'] = lender.first_name
+                        trasaction['product_info'] = Project.objects.get(
+                            pk=params['projectId']).title
+                        trasaction['transactions_type'] = "debit"
+                        serializer = LenderDeviabTransactionSerializer(
+                            data=trasaction)
+                        if serializer.is_valid():
+                            lender.wallet.debit(float(params['amount']))
+                            serializer.save()
+                            project.raiseAmount(
+                                trasaction['amount']).save()
+                            got, created = LenderCurrentStatus.objects.get_or_create(
+                                lender_id=trasaction['lender'], project_id=trasaction['project'])
+                            got.updateCurrentStatus(trasaction['amount'])
+                            return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
+                        else:
+                            return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
 
+                    else:
+                        payU_amount = float(params['amount']) - balance
+                        try:
+                            data = {'first_name': lender.first_name,
+                                    'email': lender.email, 'mobile_number': lender.mobile_number}
+                            if not data['first_name'] or not data['email'] and not data['mobile_number']:
+                                return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
+                            
+                            txnid = str(randint(1000000, 9999999))
+                            hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project['title'] + "|" + data[
+                                'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
+                            response = {}
+                            response['firstname'] = data['first_name']
+                            response['email'] = data['email']
+                            response['phone'] = data['mobile_number']
+                            response['key'] = "vz70Zb"
+                            response['productinfo'] = project['title']
+                            response['service_provider'] = "payu_paisa"
+                            response['hash'] = hashlib.sha512(hashing).hexdigest()
+                            response['furl'] = "https://" + \
+                                settings.HOST_DOMAIN + "/api/formcapture"
+                            response['surl'] = "https://" + \
+                                settings.HOST_DOMAIN + "/api/formcapture"
+                            response['udf2'] = params['projectId']
+                            response['udf1'] = str(lender.id)
+                            response['udf3'] = str(balance)
+                            response['amount'] = str(payU_amount)
+                            response['txnid'] = txnid
+                            return Response(response, status=status.HTTP_200_OK)
+                        except:
+                            return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    payU_amount = float(params['amount']) - balance
-                    try:
-                        data = {'first_name': lender.first_name,
-                                'email': lender.email, 'mobile_number': lender.mobile_number}
-                        if not data['first_name'] or not data['email'] and not data['mobile_number']:
-                            return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
-                        project = Project.objects.values(
-                            'title').get(pk=params['projectId'])
-                        if not project:
-                            return Response({'error': "Project not found"}, status=status.HTTP_400_BAD_REQUEST)
-                        txnid = str(randint(1000000, 9999999))
-                        hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project['title'] + "|" + data[
-                            'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
-                        print hashing
-                        response = {}
-                        response['firstname'] = data['first_name']
-                        response['email'] = data['email']
-                        response['phone'] = data['mobile_number']
-                        response['key'] = "vz70Zb"
-                        response['productinfo'] = project['title']
-                        response['service_provider'] = "payu_paisa"
-                        response['hash'] = hashlib.sha512(hashing).hexdigest()
-                        response['furl'] = "https://" + \
-                            settings.HOST_DOMAIN + "/api/formcapture"
-                        response['surl'] = "https://" + \
-                            settings.HOST_DOMAIN + "/api/formcapture"
-                        response['udf2'] = params['projectId']
-                        response['udf1'] = str(lender.id)
-                        response['udf3'] = str(balance)
-                        response['amount'] = str(payU_amount)
-                        response['txnid'] = txnid
-                        return Response(response, status=status.HTTP_200_OK)
-                    except:
-                        return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                try:
                     data = {'first_name': lender.first_name,
                             'email': lender.email, 'mobile_number': lender.mobile_number}
                     if not data['first_name'] or not data['email'] and not data['mobile_number']:
                         return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
-                    project = Project.objects.values(
-                        'title').get(pk=params['projectId'])
-                    if not project:
-                        return Response({'error': "Project not found"}, status=status.HTTP_400_BAD_REQUEST)
                     txnid = str(randint(1000000, 9999999))
                     hashing = "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project['title'] + "|" + data[
                         'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(0) + "||||||||" + "k1wOOh0b"
-                    print hashing
                     response = {}
                     response['firstname'] = data['first_name']
                     response['email'] = data['email']
@@ -184,8 +181,8 @@ class TransactionFormData(APIView):
                     response['amount'] = params['amount']
                     response['txnid'] = txnid
                     return Response(response, status=status.HTTP_200_OK)
-                except:
-                    return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response({'error': "Invalid Transaction"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TransactionFormCapture(APIView):
