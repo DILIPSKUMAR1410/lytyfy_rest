@@ -128,34 +128,33 @@ class TransactionFormData(APIView):
 
                     else:
                         payU_amount = float(params['amount']) - balance
-                        try:
-                            data = {'first_name': lender.first_name,
-                                    'email': lender.email, 'mobile_number': lender.mobile_number}
-                            if not data['first_name'] or not data['email'] and not data['mobile_number']:
-                                return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
+                        data = {'first_name': lender.first_name,
+                                'email': lender.email, 'mobile_number': lender.mobile_number}
+                        if not data['first_name'] or not data['email'] and not data['mobile_number']:
+                            return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
 
-                            txnid = str(randint(1000000, 9999999))
-                            hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project['title'] + "|" + data[
-                                'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
-                            response = {}
-                            response['firstname'] = data['first_name']
-                            response['email'] = data['email']
-                            response['phone'] = data['mobile_number']
-                            response['key'] = "vz70Zb"
-                            response['productinfo'] = project['title']
-                            response['service_provider'] = "payu_paisa"
-                            response['hash'] = hashlib.sha512(
-                                hashing).hexdigest()
-                            response['furl'] = "https://" + \
-                                settings.HOST_DOMAIN + "/api/formcapture"
-                            response['surl'] = "https://" + \
-                                settings.HOST_DOMAIN + "/api/formcapture"
-                            response['udf2'] = params['projectId']
-                            response['udf1'] = str(lender.id)
-                            response['udf3'] = str(balance)
-                            response['amount'] = str(payU_amount)
-                            response['txnid'] = txnid
-                            return Response(response, status=status.HTTP_200_OK)
+                        txnid = str(randint(1000000, 9999999))
+                        hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project['title'] + "|" + data[
+                            'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
+                        response = {}
+                        response['firstname'] = data['first_name']
+                        response['email'] = data['email']
+                        response['phone'] = data['mobile_number']
+                        response['key'] = "vz70Zb"
+                        response['productinfo'] = project['title']
+                        response['service_provider'] = "payu_paisa"
+                        response['hash'] = hashlib.sha512(
+                            hashing).hexdigest()
+                        response['furl'] = "https://" + \
+                            settings.HOST_DOMAIN + "/api/formcapture"
+                        response['surl'] = "https://" + \
+                            settings.HOST_DOMAIN + "/api/formcapture"
+                        response['udf2'] = params['projectId']
+                        response['udf1'] = str(lender.id)
+                        response['udf3'] = str(balance)
+                        response['amount'] = str(payU_amount)
+                        response['txnid'] = txnid
+                        return Response(response, status=status.HTTP_200_OK)
                 else:
                     data = {'first_name': lender.first_name,
                             'email': lender.email, 'mobile_number': lender.mobile_number}
