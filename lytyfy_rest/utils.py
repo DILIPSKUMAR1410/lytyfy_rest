@@ -5,6 +5,7 @@ from django.conf import settings
 from random import randint
 import hashlib
 
+
 def token_required(func):
     def inner(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', None)
@@ -21,14 +22,14 @@ def token_required(func):
     return inner
 
 
-def getFormDataForPayU(lender,project,payu_amount,wallet_money):
+def getFormDataForPayU(lender, project, payu_amount, wallet_money):
     data = {'first_name': lender.first_name,
             'email': lender.email, 'mobile_number': lender.mobile_number}
     if not data['first_name'] or not data['email'] and not data['mobile_number']:
-        return False
+        return {'error': "Invalid parameters"}
     txnid = str(randint(1000000, 9999999))
     hashing = "vz70Zb" + "|" + txnid + "|" + str(payu_amount) + "|" + project.title + "|" + data[
-        'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" +str(project.id) + "|" + str(wallet_money) + "||||||||" + "k1wOOh0b"
+        'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + str(project.id) + "|" + str(wallet_money) + "||||||||" + "k1wOOh0b"
     response = {}
     response['firstname'] = data['first_name']
     response['email'] = data['email']
@@ -37,8 +38,8 @@ def getFormDataForPayU(lender,project,payu_amount,wallet_money):
     response['productinfo'] = project.title
     response['service_provider'] = "payu_paisa"
     response['hash'] = hashlib.sha512(hashing).hexdigest()
-    response['furl'] = "https://" + \
-        settings.HOST_DOMAIN + "/api/formcapture"
+    response['furl'] = "https://" + settings.CLIENT_DOMAIN + \
+        "/#/web/account/latest_transaction"
     response['surl'] = "https://" + \
         settings.HOST_DOMAIN + "/api/formcapture"
     response['udf2'] = project.id
