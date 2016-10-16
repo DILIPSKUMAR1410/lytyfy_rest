@@ -156,8 +156,6 @@ class TransactionFormData(APIView):
                             response['amount'] = str(payU_amount)
                             response['txnid'] = txnid
                             return Response(response, status=status.HTTP_200_OK)
-                        except:
-                            return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
                 else:
                     data = {'first_name': lender.first_name,
                             'email': lender.email, 'mobile_number': lender.mobile_number}
