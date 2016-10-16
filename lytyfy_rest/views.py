@@ -168,7 +168,7 @@ class TransactionFormCapture(APIView):
             if serializer.is_valid():
                 if trasaction['wallet_money']:
                     lender = Lender.objects.get(id=trasaction['lender'])
-                    if trasaction['wallet_money'] > lender.balance:
+                    if trasaction['wallet_money'] > lender.wallet.balance:
                         return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction") 
                     lender.wallet.debit(
                         trasaction['wallet_money'])
