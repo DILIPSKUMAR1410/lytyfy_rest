@@ -115,13 +115,13 @@ class TransactionFormData(APIView):
                         serializer = LenderDeviabTransactionSerializer(
                             data=trasaction)
                         if serializer.is_valid():
-                            lender.wallet.debit(float(params['amount']))
+                            lender.wallet.debit(trasaction['wallet_money'])
                             serializer.save()
                             project.raiseAmount(
-                                trasaction['amount']).save()
+                                trasaction['wallet_money']).save()
                             got, created = LenderCurrentStatus.objects.get_or_create(
                                 lender_id=trasaction['lender'], project_id=trasaction['project'])
-                            got.updateCurrentStatus(trasaction['amount'])
+                            got.updateCurrentStatus(trasaction['wallet_money'])
                             return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
                         else:
                             return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
@@ -198,7 +198,7 @@ class TransactionFormCapture(APIView):
             trasaction = {}
             trasaction['lender'] = params['udf1'][0]
             trasaction['project'] = params['udf2'][0]
-            trasaction['wallet_money'] = params['udf3'][0]
+            trasaction['wallet_money'] = float(params['udf3'][0])
             trasaction['amount'] = float(params['amount'][0])
             trasaction['customer_email'] = params['email'][0]
             trasaction['payment_id'] = params['payuMoneyId'][0]
@@ -212,13 +212,14 @@ class TransactionFormCapture(APIView):
             if serializer.is_valid():
                 if trasaction['wallet_money']:
                     Lender.objects.get(id=trasaction['lender']).wallet.debit(
-                        float(trasaction['wallet_money']))
+                        trasaction['wallet_money'])
                 serializer.save()
+                combined_amount = trasaction['wallet_money'] + trasaction['amount']
                 Project.objects.get(pk=trasaction['project']).raiseAmount(
-                    trasaction['amount']).save()
+                    combined_amount).save()
                 got, created = LenderCurrentStatus.objects.get_or_create(
                     lender_id=trasaction['lender'], project_id=trasaction['project'])
-                got.updateCurrentStatus(trasaction['amount'])
+                got.updateCurrentStatus(combined_amount)
                 return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
             else:
                 return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
