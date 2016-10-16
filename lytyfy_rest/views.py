@@ -20,6 +20,7 @@ from django.core.mail import send_mail
 from django.db.models import Sum
 from django.conf import settings
 from open_facebook.api import OpenFacebook, FacebookAuthorization
+from lytyfy_rest.utils import getFormDataForPayU
 
 
 class HomePageApi(APIView):
@@ -125,61 +126,19 @@ class TransactionFormData(APIView):
                             return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
                         else:
                             return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
-
+                    # Mixed transaction
                     else:
-                        payU_amount = float(params['amount']) - balance
-                        data = {'first_name': lender.first_name,
-                                'email': lender.email, 'mobile_number': lender.mobile_number}
-                        if not data['first_name'] or not data['email'] and not data['mobile_number']:
-                            return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
-
-                        txnid = str(randint(1000000, 9999999))
-                        hashing = "vz70Zb" + "|" + txnid + "|" + str(payU_amount) + "|" + project.title + "|" + data[
-                            'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(balance) + "||||||||" + "k1wOOh0b"
-                        response = {}
-                        response['firstname'] = data['first_name']
-                        response['email'] = data['email']
-                        response['phone'] = data['mobile_number']
-                        response['key'] = "vz70Zb"
-                        response['productinfo'] = project.title
-                        response['service_provider'] = "payu_paisa"
-                        response['hash'] = hashlib.sha512(
-                            hashing).hexdigest()
-                        response['furl'] = "https://" + \
-                            settings.HOST_DOMAIN + "/api/formcapture"
-                        response['surl'] = "https://" + \
-                            settings.HOST_DOMAIN + "/api/formcapture"
-                        response['udf2'] = params['projectId']
-                        response['udf1'] = str(lender.id)
-                        response['udf3'] = str(balance)
-                        response['amount'] = str(payU_amount)
-                        response['txnid'] = txnid
+                        payu_amount = float(params['amount']) - balance
+                        wallet_money = balance
+                        response = getFormDataForPayU(
+                            lender, project, payu_amount, wallet_money)
                         return Response(response, status=status.HTTP_200_OK)
+                # External transaction
                 else:
-                    data = {'first_name': lender.first_name,
-                            'email': lender.email, 'mobile_number': lender.mobile_number}
-                    if not data['first_name'] or not data['email'] and not data['mobile_number']:
-                        return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
-                    txnid = str(randint(1000000, 9999999))
-                    hashing = "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project.title + "|" + data[
-                        'first_name'] + "|" + data['email'] + "|" + str(lender.id) + "|" + params['projectId'] + "|" + str(0) + "||||||||" + "k1wOOh0b"
-                    response = {}
-                    response['firstname'] = data['first_name']
-                    response['email'] = data['email']
-                    response['phone'] = data['mobile_number']
-                    response['key'] = "vz70Zb"
-                    response['productinfo'] = project.title
-                    response['service_provider'] = "payu_paisa"
-                    response['hash'] = hashlib.sha512(hashing).hexdigest()
-                    response['furl'] = "https://" + \
-                        settings.HOST_DOMAIN + "/api/formcapture"
-                    response['surl'] = "https://" + \
-                        settings.HOST_DOMAIN + "/api/formcapture"
-                    response['udf2'] = params['projectId']
-                    response['udf1'] = lender.id
-                    response['udf3'] = 0
-                    response['amount'] = params['amount']
-                    response['txnid'] = txnid
+                    payu_amount = params.get('amount', None)
+                    wallet_money = 0
+                    response = getFormDataForPayU(
+                        lender, project, payu_amount, wallet_money)
                     return Response(response, status=status.HTTP_200_OK)
         except:
             return Response({'error': "Invalid Transaction"}, status=status.HTTP_400_BAD_REQUEST)
