@@ -223,7 +223,7 @@ class Borrower(models.Model):
     project = models.ForeignKey(Project, related_name="borrowers", null=True,)
 
     def __unicode__(self):
-        return self.first_name + " " + self.last_name
+        return self.first_name 
 
 
 class ProjectGallery(models.Model):
