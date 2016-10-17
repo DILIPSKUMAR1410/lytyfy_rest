@@ -30,7 +30,7 @@ class HomePageApi(APIView):
         raised = int(
             sum(Project.objects.all().values_list('raisedAmount', flat=True)))
         borrowers = Borrower.objects.all().count()
-        return Response({'backers': investors , 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
+        return Response({'backers': investors, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
 
 
 class DashBoardApi(APIView):
@@ -169,7 +169,7 @@ class TransactionFormCapture(APIView):
                 if trasaction['wallet_money']:
                     lender = Lender.objects.get(id=trasaction['lender'])
                     if trasaction['wallet_money'] > lender.wallet.balance:
-                        return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction") 
+                        return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
                     lender.wallet.debit(
                         trasaction['wallet_money'])
                 serializer.save()
