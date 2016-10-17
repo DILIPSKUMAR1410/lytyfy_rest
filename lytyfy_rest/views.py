@@ -30,7 +30,7 @@ class HomePageApi(APIView):
         raised = int(
             sum(Project.objects.all().values_list('raisedAmount', flat=True)))
         borrowers = Borrower.objects.all().count()
-        return Response({'backers': investors + 18, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
+        return Response({'backers': investors , 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
 
 
 class DashBoardApi(APIView):
@@ -450,7 +450,7 @@ class ListProject(APIView):
             project_detail['place'] = project.place
             project_detail['description'] = project.description
             project_detail['offlistDate'] = project.offlistDate
-            project_detail['repayment_term'] = 8
+            project_detail['repayment_term'] = 6
             project_detail['repayment_schedule'] = "Monthly"
             project_detail['field_partner'] = project.field_partner.name
             project_detail[
@@ -681,7 +681,7 @@ class GetProject(APIView):
         project_detail['place'] = project.place
         project_detail['description'] = project.description
         project_detail['offlistDate'] = project.offlistDate
-        project_detail['repayment_term'] = 8
+        project_detail['repayment_term'] = 6
         project_detail['repayment_schedule'] = "Monthly"
         project_detail[
             'status'] = "running" if project.offlistDate > timezone.now() else "completed"
