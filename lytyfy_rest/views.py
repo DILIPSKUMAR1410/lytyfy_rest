@@ -122,6 +122,8 @@ class TransactionFormData(APIView):
                                 trasaction['wallet_money']).save()
                             got, created = LenderCurrentStatus.objects.get_or_create(
                                 lender_id=trasaction['lender'], project_id=trasaction['project'])
+                            if created:
+                                got.tenure_left = project.terms.tenure
                             got.updateCurrentStatus(trasaction['wallet_money'])
                             return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
                         else:
@@ -175,10 +177,12 @@ class TransactionFormCapture(APIView):
                 serializer.save()
                 combined_amount = trasaction[
                     'wallet_money'] + trasaction['amount']
-                Project.objects.get(pk=trasaction['project']).raiseAmount(
-                    combined_amount).save()
+                project = Project.objects.get(pk=trasaction['project'])
+                project.raiseAmount(combined_amount).save()
                 got, created = LenderCurrentStatus.objects.get_or_create(
                     lender_id=trasaction['lender'], project_id=trasaction['project'])
+                if created:
+                    got.tenure_left = project.terms.tenure
                 got.updateCurrentStatus(combined_amount)
                 return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
             else:

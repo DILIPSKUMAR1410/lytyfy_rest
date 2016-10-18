@@ -173,7 +173,6 @@ class LenderCurrentStatus(models.Model):
 
     def updateCurrentStatus(self, amount):
         rate = self.project.terms.rate
-        tenure = self.project.terms.tenure
         self.principal_left += amount
         il = amount * rate / 100
         self.interest_left += il
