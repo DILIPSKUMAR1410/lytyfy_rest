@@ -14,11 +14,14 @@ class Lender(models.Model):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30, null=True)
     mobile_number = models.CharField(max_length=13, null=True)
-    email = models.CharField(max_length=30, null=True)
+    email = models.CharField(max_length=60, null=True)
     user = models.OneToOneField(User, related_name='lender')
     avatar = models.CharField(max_length=30, null=True)
     gender = models.IntegerField(choices=GENDER_CHOICES, null=True)
     dob = models.CharField(max_length=30, null=True)
+
+    def __unicode__(self):
+        return self.first_name + " " + self.last_name
 
 
 class LenderWallet(models.Model):
@@ -28,6 +31,10 @@ class LenderWallet(models.Model):
 
     def credit(self, amount):
         self.balance += amount
+        self.save()
+
+    def debit(self, amount):
+        self.balance -= amount
         self.save()
 
 
@@ -46,15 +53,49 @@ class LenderWithdrawalRequest(models.Model):
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
 
 
+class Product(models.Model):
+    name = models.CharField(max_length=30)
+    description = models.TextField()
+    image_url = S3DirectField(dest='product_img',
+                              max_length=64, null=True, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class FieldPartner(models.Model):
+    name = models.CharField(max_length=30)
+    description = models.TextField()
+    avatar = S3DirectField(dest='field_partner_img',
+                           max_length=64, null=True, blank=True)
+    email = models.CharField(max_length=60, null=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+class LoanTerm(models.Model):
+    tenure = models.IntegerField()
+    rate = models.FloatField()
+
+
 class Project(models.Model):
 
-    title = models.CharField(max_length=30)
+    title = models.CharField(max_length=100)
     raisedAmount = models.FloatField(default=0.0)
     targetAmount = models.FloatField(default=0.0)
     place = models.CharField(max_length=30)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)
     enlistDate = models.DateTimeField(default=timezone.now)
     offlistDate = models.DateTimeField()
+    field_partner = models.ForeignKey(FieldPartner, null=True)
+    product = models.ForeignKey(Product, null=True)
+    image_url = S3DirectField(dest='project_img',
+                              max_length=64, null=True, blank=True)
+    customer_story = models.TextField(null=True, blank=True)
+    customer_img = S3DirectField(dest='customer_img',
+                                 max_length=64, null=True, blank=True)
+    terms = models.ForeignKey(LoanTerm, null=True)
 
     def raiseAmount(self, amount=None):
         self.raisedAmount += amount
@@ -68,7 +109,8 @@ class LenderDeviabTransaction(models.Model):
 
     PAYMENT_CHOICES = ((0, 'CC'),
                        (1, 'DC'),
-                       (2, 'NB'))
+                       (2, 'NB'),
+                       (3, 'WL'))
     lender = models.ForeignKey(Lender, related_name="lender_transactions")
     project = models.ForeignKey(Project, related_name="project_transactions")
     timestamp = models.DateTimeField(default=timezone.now)
@@ -76,15 +118,16 @@ class LenderDeviabTransaction(models.Model):
     payment_id = models.IntegerField(default=0)
     status = models.CharField(max_length=30, null=True)
     payment_mode = models.IntegerField(choices=PAYMENT_CHOICES, null=True)
-    customer_email = models.CharField(max_length=30, null=True)
+    customer_email = models.CharField(max_length=250, null=True)
     customer_phone = models.CharField(max_length=30, null=True)
-    customer_name = models.CharField(max_length=30, null=True)
-    product_info = models.CharField(max_length=30, null=True)
+    customer_name = models.CharField(max_length=250, null=True)
+    product_info = models.CharField(max_length=250, null=True)
     additional_charges = models.FloatField(default=0.0, null=True)
     split_info = models.CharField(max_length=255, null=True)
-    error_message = models.CharField(max_length=30, null=True)
-    notification = models.CharField(max_length=30, null=True)
+    error_message = models.CharField(max_length=250, null=True)
+    notification = models.CharField(max_length=250, null=True)
     transactions_type = models.CharField(max_length=30)
+    wallet_money = models.FloatField(default=0.0)
 
     def __unicode__(self):
         return str(self.payment_id)
@@ -125,12 +168,13 @@ class LenderCurrentStatus(models.Model):
     principal_left = models.FloatField(default=0.0)
     interest_left = models.FloatField(default=0.0)
     emr = models.FloatField(default=0.0)
-    tenure_left = models.IntegerField(default=8)
+    tenure_left = models.IntegerField(default=6)
     project = models.ForeignKey(Project, related_name="lenders")
 
     def updateCurrentStatus(self, amount):
+        rate = self.project.terms.rate
         self.principal_left += amount
-        il = amount * .6 / 100
+        il = amount * rate / 100
         self.interest_left += il
         self.emr = self.principal_left / self.tenure_left + self.interest_left
 
@@ -143,12 +187,14 @@ class LenderCurrentStatus(models.Model):
         return self
 
     def FMI_paid(self, amount):
+        rate = self.project.terms.rate
         if amount < self.interest_left:
             self.interest_left -= amount
-            self.interest_left += self.principal_left * .6 / 100
+            self.interest_left += self.principal_left * rate / 100
             self.interest_repaid += amount
             self.tenure_left -= 1
-            self.emr = self.principal_left / self.tenure_left + self.interest_left if self.tenure_left else 0
+            self.emr = self.principal_left / self.tenure_left + \
+                self.interest_left if self.tenure_left else 0
 
             # remove after floating issue resolved
             self.interest_left = round(self.interest_left, 2)
@@ -161,9 +207,10 @@ class LenderCurrentStatus(models.Model):
             self.interest_repaid += self.interest_left
             self.principal_repaid += (amount - self.interest_left)
 
-            self.interest_left = self.principal_left * .6 / 100
+            self.interest_left = self.principal_left * rate / 100
             self.tenure_left -= 1
-            self.emr = self.principal_left / self.tenure_left + self.interest_left if self.tenure_left else 0
+            self.emr = self.principal_left / self.tenure_left + \
+                self.interest_left if self.tenure_left else 0
 
             # remove after floating issue resolved
             self.interest_left = round(self.interest_left, 2)
@@ -184,4 +231,13 @@ class Borrower(models.Model):
     project = models.ForeignKey(Project, related_name="borrowers", null=True,)
 
     def __unicode__(self):
-        return self.first_name + " " + self.last_name
+        return self.first_name
+
+
+class ProjectGallery(models.Model):
+    image_url = S3DirectField(dest='project_gallery',
+                              max_length=64, null=True, blank=True)
+    project = models.ForeignKey(Project, related_name="gallery")
+
+    def __unicode__(self):
+        return self.image_url

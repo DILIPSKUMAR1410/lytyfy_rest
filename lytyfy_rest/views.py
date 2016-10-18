@@ -20,6 +20,7 @@ from django.core.mail import send_mail
 from django.db.models import Sum
 from django.conf import settings
 from open_facebook.api import OpenFacebook, FacebookAuthorization
+from lytyfy_rest.utils import getFormDataForPayU
 
 
 class HomePageApi(APIView):
@@ -58,10 +59,12 @@ class WalletTransactions(APIView):
         lender = request.token.user.lender
         ldt = LenderDeviabTransaction.objects.select_related(
             'project').filter(lender=lender)
-        data = ldt.values('amount', 'payment_id', 'timestamp',
+        data = ldt.values('amount', 'wallet_money', 'payment_id', 'timestamp',
                           'project__title', 'transactions_type').order_by('-timestamp')
         for datum in data:
             datum['timestamp'] = datum['timestamp'].strftime("%d, %b %Y | %r")
+            if datum['wallet_money']:
+                datum['amount'] += datum['wallet_money']
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -77,44 +80,70 @@ class LenderPortfolio(APIView):
 
 class TransactionFormData(APIView):
 
+    @transaction.atomic
     @token_required
     def get(self, request, format=None):
-        if request.GET.get('amount', None) and request.GET.get('projectId', None):
-            try:
-                params = request.GET
-                lender = request.token.user.lender
-                data = {'first_name': lender.first_name,
-                        'email': lender.email, 'mobile_number': lender.mobile_number}
-                if not data['first_name'] or not data['email'] and not data['mobile_number']:
-                    return Response({'error': "Please provide your profile details "}, status=status.HTTP_400_BAD_REQUEST)
-                project = Project.objects.values(
-                    'title').get(pk=params['projectId'])
+        params = request.GET
+        lender = request.token.user.lender
+        balance = lender.wallet.balance
+        try:
+            if params.get('amount', None) and params.get('projectId', None):
+                project = Project.objects.filter(
+                    pk=params['projectId']).first()
                 if not project:
                     return Response({'error': "Project not found"}, status=status.HTTP_400_BAD_REQUEST)
-                txnid = str(randint(1000000, 9999999))
-                hashing = "vz70Zb" + "|" + txnid + "|" + params['amount'] + "|" + project['title'] + "|" + data[
-                    'first_name'] + "|" + data['email'] + "|" + params['lenderId'] + "|" + params['projectId'] + "|||||||||" + "k1wOOh0b"
-                response = {}
-                response['firstname'] = data['first_name']
-                response['email'] = data['email']
-                response['phone'] = data['mobile_number']
-                response['key'] = "vz70Zb"
-                response['productinfo'] = project['title']
-                response['service_provider'] = "payu_paisa"
-                response['hash'] = hashlib.sha512(hashing).hexdigest()
-                response['furl'] = "http://" + \
-                    settings.HOST_DOMAIN + "/api/formcapture"
-                response['surl'] = "http://" + \
-                    settings.HOST_DOMAIN + "/api/formcapture"
-                response['udf2'] = params['projectId']
-                response['udf1'] = lender.id
-                response['amount'] = params['amount']
-                response['txnid'] = txnid
-                return Response(response, status=status.HTTP_200_OK)
-            except:
-                return Response({'error': "Lender not found"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
+                target_balance = project.targetAmount - project.raisedAmount
+                if target_balance < float(params['amount']):
+                    return Response({'error': "Cant invest more than expected"}, status=status.HTTP_400_BAD_REQUEST)
+                if request.GET.get('walletCheck', False) == "true":
+                    # Internal transaction
+                    if float(params['amount']) <= balance:
+                        trasaction = {}
+                        trasaction['lender'] = lender.id
+                        trasaction['project'] = params['projectId']
+                        trasaction['amount'] = 0
+                        trasaction['wallet_money'] = float(params['amount'])
+                        trasaction['customer_email'] = lender.email
+                        trasaction['payment_id'] = str(
+                            randint(1000000, 9999999))
+                        trasaction['status'] = "success"
+                        trasaction['payment_mode'] = 3
+                        trasaction['customer_phone'] = lender.mobile_number
+                        trasaction['customer_name'] = lender.first_name
+                        trasaction['product_info'] = Project.objects.get(
+                            pk=params['projectId']).title
+                        trasaction['transactions_type'] = "debit"
+                        serializer = LenderDeviabTransactionSerializer(
+                            data=trasaction)
+                        if serializer.is_valid():
+                            lender.wallet.debit(trasaction['wallet_money'])
+                            serializer.save()
+                            project.raiseAmount(
+                                trasaction['wallet_money']).save()
+                            got, created = LenderCurrentStatus.objects.get_or_create(
+                                lender_id=trasaction['lender'], project_id=trasaction['project'])
+                            if created:
+                                got.tenure_left = project.terms.tenure
+                            got.updateCurrentStatus(trasaction['wallet_money'])
+                            return Response({'msg': "Succesfully Invested"}, status=status.HTTP_200_OK)
+                        else:
+                            return Response({'error': "Invalid parameters"}, status=status.HTTP_400_BAD_REQUEST)
+                    # Mixed transaction
+                    else:
+                        payu_amount = float(params['amount']) - balance
+                        wallet_money = balance
+                        response = getFormDataForPayU(
+                            lender, project, payu_amount, wallet_money)
+                        return Response(response, status=status.HTTP_200_OK)
+                # External transaction
+                else:
+                    payu_amount = params.get('amount', None)
+                    wallet_money = 0
+                    response = getFormDataForPayU(
+                        lender, project, payu_amount, wallet_money)
+                    return Response(response, status=status.HTTP_200_OK)
+        except:
+            return Response({'error': "Invalid Transaction"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TransactionFormCapture(APIView):
@@ -127,6 +156,7 @@ class TransactionFormCapture(APIView):
             trasaction = {}
             trasaction['lender'] = params['udf1'][0]
             trasaction['project'] = params['udf2'][0]
+            trasaction['wallet_money'] = float(params['udf3'][0])
             trasaction['amount'] = float(params['amount'][0])
             trasaction['customer_email'] = params['email'][0]
             trasaction['payment_id'] = params['payuMoneyId'][0]
@@ -135,19 +165,30 @@ class TransactionFormCapture(APIView):
             trasaction['customer_phone'] = params['phone'][0]
             trasaction['customer_name'] = params['firstname'][0]
             trasaction['product_info'] = params['productinfo'][0]
+            trasaction['transactions_type'] = "debit"
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
             if serializer.is_valid():
+                if trasaction['wallet_money']:
+                    lender = Lender.objects.get(id=trasaction['lender'])
+                    if trasaction['wallet_money'] > lender.wallet.balance:
+                        return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
+                    lender.wallet.debit(
+                        trasaction['wallet_money'])
                 serializer.save()
-                Project.objects.get(pk=trasaction['project']).raiseAmount(
-                    trasaction['amount']).save()
+                combined_amount = trasaction[
+                    'wallet_money'] + trasaction['amount']
+                project = Project.objects.get(pk=trasaction['project'])
+                project.raiseAmount(combined_amount).save()
                 got, created = LenderCurrentStatus.objects.get_or_create(
                     lender_id=trasaction['lender'], project_id=trasaction['project'])
-                got.updateCurrentStatus(trasaction['amount'])
-                return redirect("http://" + settings.CLIENT_DOMAIN + "/#/dashboard")
+                if created:
+                    got.tenure_left = project.terms.tenure
+                got.updateCurrentStatus(combined_amount)
+                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
             else:
-                return redirect("http://" + settings.CLIENT_DOMAIN + "/#/dashboard")
+                return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
         else:
-            return redirect("http://" + settings.CLIENT_DOMAIN + "/#/dashboard")
+            return redirect("https://" + settings.CLIENT_DOMAIN + "/#/web/account/latest_transaction")
 
 
 class GetLenderDetail(APIView):
@@ -397,7 +438,8 @@ class ChangePassword(APIView):
 class ListProject(APIView):
 
     def get(self, request, format=None):
-        projects = Project.objects.prefetch_related('lenders').all()
+        projects = Project.objects.prefetch_related(
+            'lenders').select_related('field_partner').all().order_by('-offlistDate')
         data = []
         for project in projects:
             project_detail = {}
@@ -412,8 +454,9 @@ class ListProject(APIView):
             project_detail['place'] = project.place
             project_detail['description'] = project.description
             project_detail['offlistDate'] = project.offlistDate
-            project_detail['repayment_term'] = 8
+            project_detail['repayment_term'] = 6
             project_detail['repayment_schedule'] = "Monthly"
+            project_detail['field_partner'] = project.field_partner.name
             project_detail[
                 'status'] = "running" if project.offlistDate > timezone.now() else "completed"
             data.append(project_detail)
@@ -552,7 +595,7 @@ class FBToken(APIView):
                                         }
                                     ],
                                     "substitutions": {
-                                        "-link-": "http://" + settings.CLIENT_DOMAIN + "/#/register?uid=" + uid
+                                        "-link-": "https://" + settings.CLIENT_DOMAIN + "/#/register?uid=" + uid
                                     }
                                 }
                             ],
@@ -614,3 +657,36 @@ class VerifyInvestor(APIView):
             else:
                 return Response({'msg': "lender not found"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'msg': "Invalid Request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetProject(APIView):
+
+    def get(self, request, project_id, format=None):
+        project = Project.objects.select_related(
+            'product', 'field_partner').prefetch_related('gallery').get(id=project_id)
+        project_detail = {}
+        project_detail['project_id'] = project.id
+        project_detail['field_partner__name'] = project.field_partner.name
+        project_detail[
+            'field_partner__description'] = project.field_partner.description
+        project_detail['field_partner__avatar'] = project.field_partner.avatar
+        project_detail['gallery__image_url'] = project.gallery.values_list(
+            'image_url', flat=True)
+        project_detail['image_url'] = project.image_url
+        project_detail['customer_img'] = project.customer_img
+        project_detail['customer_story'] = project.customer_story
+        project_detail['borrowers'] = project.borrowers.values(
+            'first_name', 'last_name', 'avatar')
+        project_detail['lenders'] = project.lenders.values(
+            'lender_id', 'lender__first_name', 'lender__avatar')
+        project_detail['title'] = project.title
+        project_detail['loan_raised'] = project.raisedAmount
+        project_detail['loan_amount'] = project.targetAmount
+        project_detail['place'] = project.place
+        project_detail['description'] = project.description
+        project_detail['offlistDate'] = project.offlistDate
+        project_detail['repayment_term'] = 6
+        project_detail['repayment_schedule'] = "Monthly"
+        project_detail[
+            'status'] = "running" if project.offlistDate > timezone.now() else "completed"
+        return Response(project_detail, status=status.HTTP_200_OK)
