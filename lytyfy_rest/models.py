@@ -74,6 +74,11 @@ class FieldPartner(models.Model):
         return self.name
 
 
+class LoanTerm(models.Model):
+    tenure = models.IntegerField()
+    rate = models.FloatField()
+
+
 class Project(models.Model):
 
     title = models.CharField(max_length=100)
@@ -90,6 +95,7 @@ class Project(models.Model):
     customer_story = models.TextField(null=True, blank=True)
     customer_img = S3DirectField(dest='customer_img',
                                  max_length=64, null=True, blank=True)
+    terms = models.ForeignKey(LoanTerm, null=True)
 
     def raiseAmount(self, amount=None):
         self.raisedAmount += amount
@@ -162,12 +168,14 @@ class LenderCurrentStatus(models.Model):
     principal_left = models.FloatField(default=0.0)
     interest_left = models.FloatField(default=0.0)
     emr = models.FloatField(default=0.0)
-    tenure_left = models.IntegerField(default=8)
+    tenure_left = models.IntegerField(default=6)
     project = models.ForeignKey(Project, related_name="lenders")
 
     def updateCurrentStatus(self, amount):
+        rate = self.project.terms.rate
+        tenure = self.project.terms.tenure
         self.principal_left += amount
-        il = amount * .6 / 100
+        il = amount * rate / 100
         self.interest_left += il
         self.emr = self.principal_left / self.tenure_left + self.interest_left
 
@@ -180,9 +188,10 @@ class LenderCurrentStatus(models.Model):
         return self
 
     def FMI_paid(self, amount):
+        rate = self.project.terms.rate
         if amount < self.interest_left:
             self.interest_left -= amount
-            self.interest_left += self.principal_left * .6 / 100
+            self.interest_left += self.principal_left * rate / 100
             self.interest_repaid += amount
             self.tenure_left -= 1
             self.emr = self.principal_left / self.tenure_left + \
@@ -199,7 +208,7 @@ class LenderCurrentStatus(models.Model):
             self.interest_repaid += self.interest_left
             self.principal_repaid += (amount - self.interest_left)
 
-            self.interest_left = self.principal_left * .6 / 100
+            self.interest_left = self.principal_left * rate / 100
             self.tenure_left -= 1
             self.emr = self.principal_left / self.tenure_left + \
                 self.interest_left if self.tenure_left else 0
@@ -223,7 +232,7 @@ class Borrower(models.Model):
     project = models.ForeignKey(Project, related_name="borrowers", null=True,)
 
     def __unicode__(self):
-        return self.first_name 
+        return self.first_name
 
 
 class ProjectGallery(models.Model):
