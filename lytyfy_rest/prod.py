@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'lytyfy_rest.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'deviab_rep',
+        'NAME': 'deviab',
         'USER': 'mrrobot',
         'PASSWORD': 'DiVaNe_47',
         # Or an IP Address that your DB is hosted on
