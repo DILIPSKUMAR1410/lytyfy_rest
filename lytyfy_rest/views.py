@@ -439,15 +439,15 @@ class ListProject(APIView):
 
     def get(self, request, format=None):
         projects = Project.objects.prefetch_related(
-            'lenders').select_related('field_partner').all().order_by('-offlistDate')
+            'lenders', 'borrowers').select_related('field_partner').all().order_by('-offlistDate')
         data = []
         for project in projects:
             project_detail = {}
             project_detail['project_id'] = project.id
             project_detail['borrowers'] = project.borrowers.values(
-                'first_name', 'last_name', 'avatar')
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar')
             project_detail['lenders'] = project.lenders.values(
-                'lender_id', 'lender__first_name', 'lender__avatar')
+                'lender_id', 'lender__first_name', 'lender__last_name', 'lender__avatar')
             project_detail['title'] = project.title
             project_detail['loan_raised'] = project.raisedAmount
             project_detail['loan_amount'] = project.targetAmount
@@ -663,7 +663,7 @@ class GetProject(APIView):
 
     def get(self, request, project_id, format=None):
         project = Project.objects.select_related(
-            'product', 'field_partner').prefetch_related('gallery').get(id=project_id)
+            'product', 'field_partner').prefetch_related('gallery', 'borrowers').get(id=project_id)
         project_detail = {}
         project_detail['project_id'] = project.id
         project_detail['field_partner__name'] = project.field_partner.name
@@ -676,9 +676,9 @@ class GetProject(APIView):
         project_detail['customer_img'] = project.customer_img
         project_detail['customer_story'] = project.customer_story
         project_detail['borrowers'] = project.borrowers.values(
-            'first_name', 'last_name', 'avatar')
+            'borrower__first_name', 'borrower__last_name', 'borrower__avatar')
         project_detail['lenders'] = project.lenders.values(
-            'lender_id', 'lender__first_name', 'lender__avatar')
+            'lender_id', 'lender__first_name', 'lender__last_name', 'lender__avatar')
         project_detail['title'] = project.title
         project_detail['loan_raised'] = project.raisedAmount
         project_detail['loan_amount'] = project.targetAmount

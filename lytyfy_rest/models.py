@@ -228,7 +228,6 @@ class Borrower(models.Model):
     mobile_number = models.CharField(max_length=13, null=True, blank=True)
     avatar = S3DirectField(dest='borrower_img',
                            max_length=64, null=True, blank=True)
-    project = models.ForeignKey(Project, related_name="borrowers", null=True,)
 
     def __unicode__(self):
         return self.first_name
@@ -251,25 +250,24 @@ class FieldRep(models.Model):
     user = models.OneToOneField(User, related_name='fieldrep')
 
     def __unicode__(self):
-        return self.mobile_number
+        return self.first_name
 
 
-class FRandBorrowerMap(models.Model):
+class FRBorrowerMap(models.Model):
     field_rep = models.ForeignKey(FieldRep, related_name='fieldrep_borrower')
     borrower = models.OneToOneField(Borrower, related_name='borrower_fieldrep')
 
 
-class BorrowerCurrentStatus(models.Model):
-    borrower = models.ForeignKey(Borrower, related_name="borrower_loans")
+class LoanStatus(models.Model):
     principal_repaid = models.FloatField(default=0.0)
     interest_repaid = models.FloatField(default=0.0)
     principal_left = models.FloatField(default=0.0)
     interest_left = models.FloatField(default=0.0)
     emr = models.FloatField(default=0.0)
-    tenure_left = models.IntegerField(default=6)
+    tenure_left = models.IntegerField()
 
     def updateCurrentStatus(self, amount):
-        rate = self.project.terms.rate
+        rate = self.borrower_loan_details.terms.rate
         self.principal_left += amount
         il = amount * rate / 100
         self.interest_left += il
@@ -284,12 +282,12 @@ class BorrowerCurrentStatus(models.Model):
         return self
 
     def FMI_paid(self, amount):
-        rate = self.project.terms.rate
+        rate = self.borrower_loan_details.terms.rate
         if amount < self.interest_left:
             self.interest_left -= amount
             self.interest_left += self.principal_left * rate / 100
             self.interest_repaid += amount
-            self.tenure_left -= 1
+            self.tenure_left = self.tenure_left - 1 if self.tenure_left - 1 else 0
             self.emr = self.principal_left / self.tenure_left + \
                 self.interest_left if self.tenure_left else 0
 
@@ -305,7 +303,7 @@ class BorrowerCurrentStatus(models.Model):
             self.principal_repaid += (amount - self.interest_left)
 
             self.interest_left = self.principal_left * rate / 100
-            self.tenure_left -= 1
+            self.tenure_left = self.tenure_left - 1 if self.tenure_left - 1 else 0
             self.emr = self.principal_left / self.tenure_left + \
                 self.interest_left if self.tenure_left else 0
 
@@ -319,7 +317,6 @@ class BorrowerCurrentStatus(models.Model):
             self.save()
 
 
-
 class BorrowerDeviabTransaction(models.Model):
     PAYMENT_CHOICES = ((0, 'CC'),
                        (1, 'DC'),
@@ -327,15 +324,17 @@ class BorrowerDeviabTransaction(models.Model):
                        (3, 'WL'))
 
     TRANSACTION_TYPE = ((0, 'INST'),
-                       (1, 'DOWN'))
+                        (1, 'DOWN'))
 
-    borrower = models.ForeignKey(Borrower, related_name="borrower_transactions")
+    borrower = models.ForeignKey(
+        Borrower, related_name="borrower_transactions")
     timestamp = models.DateTimeField(default=timezone.now)
     amount = models.FloatField(default=0.0)
     payment_id = models.IntegerField(default=0)
     status = models.CharField(max_length=30, null=True)
     payment_mode = models.IntegerField(choices=PAYMENT_CHOICES, null=True)
-    transactions_type = models.IntegerField(choices=TRANSACTION_TYPE, null=True)
+    transactions_type = models.IntegerField(
+        choices=TRANSACTION_TYPE, null=True)
 
     def __unicode__(self):
         return str(self.payment_id)
@@ -343,9 +342,12 @@ class BorrowerDeviabTransaction(models.Model):
 
 class BorrowerLoanDetails(models.Model):
 
-    borrower = models.ForeignKey(Borrower, related_name="borrower_loan_details")
+    borrower = models.ForeignKey(
+        Borrower, related_name="projects")
     terms = models.ForeignKey(LoanTerm, null=True)
-    loan_amount = models.FloatField(default=0.0)
+    amount = models.FloatField(default=0.0)
+    current_status = models.OneToOneField(
+        LoanStatus, related_name='borrower_loan_details')
+    project = models.ForeignKey(Project, related_name="borrowers", null=True)
+    status = models.BooleanField(default=False)
     created_date = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=30, null=True)
-
