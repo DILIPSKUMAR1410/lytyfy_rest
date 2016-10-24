@@ -335,6 +335,8 @@ class BorrowerDeviabTransaction(models.Model):
     payment_mode = models.IntegerField(choices=PAYMENT_CHOICES, null=True)
     transactions_type = models.IntegerField(
         choices=TRANSACTION_TYPE, null=True)
+    fieldrep = models.ForeignKey(
+        FieldRep, related_name="collections")
 
     def __unicode__(self):
         return str(self.payment_id)
