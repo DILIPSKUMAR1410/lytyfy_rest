@@ -241,3 +241,111 @@ class ProjectGallery(models.Model):
 
     def __unicode__(self):
         return self.image_url
+
+
+class FieldRep(models.Model):
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30, null=True)
+    mobile_number = models.CharField(max_length=13, null=True, blank=True)
+    email = models.CharField(max_length=60, null=True)
+    user = models.OneToOneField(User, related_name='fieldrep')
+
+    def __unicode__(self):
+        return self.mobile_number
+
+
+class FRandBorrowerMap(models.Model):
+    field_rep = models.ForeignKey(FieldRep, related_name='fieldrep_borrower')
+    borrower = models.OneToOneField(Borrower, related_name='borrower_fieldrep')
+
+
+class BorrowerCurrentStatus(models.Model):
+    borrower = models.ForeignKey(Borrower, related_name="borrower_loans")
+    principal_repaid = models.FloatField(default=0.0)
+    interest_repaid = models.FloatField(default=0.0)
+    principal_left = models.FloatField(default=0.0)
+    interest_left = models.FloatField(default=0.0)
+    emr = models.FloatField(default=0.0)
+    tenure_left = models.IntegerField(default=6)
+
+    def updateCurrentStatus(self, amount):
+        rate = self.project.terms.rate
+        self.principal_left += amount
+        il = amount * rate / 100
+        self.interest_left += il
+        self.emr = self.principal_left / self.tenure_left + self.interest_left
+
+        # remove after floating issue resolved
+        self.interest_left = round(self.interest_left, 2)
+        self.emr = round(self.emr, 2)
+        self.principal_left = round(self.principal_left, 2)
+
+        self.save()
+        return self
+
+    def FMI_paid(self, amount):
+        rate = self.project.terms.rate
+        if amount < self.interest_left:
+            self.interest_left -= amount
+            self.interest_left += self.principal_left * rate / 100
+            self.interest_repaid += amount
+            self.tenure_left -= 1
+            self.emr = self.principal_left / self.tenure_left + \
+                self.interest_left if self.tenure_left else 0
+
+            # remove after floating issue resolved
+            self.interest_left = round(self.interest_left, 2)
+            self.interest_repaid = round(self.interest_repaid, 2)
+            self.emr = round(self.emr, 2)
+
+            self.save()
+        else:
+            self.principal_left -= (amount - self.interest_left)
+            self.interest_repaid += self.interest_left
+            self.principal_repaid += (amount - self.interest_left)
+
+            self.interest_left = self.principal_left * rate / 100
+            self.tenure_left -= 1
+            self.emr = self.principal_left / self.tenure_left + \
+                self.interest_left if self.tenure_left else 0
+
+            # remove after floating issue resolved
+            self.interest_left = round(self.interest_left, 2)
+            self.interest_repaid = round(self.interest_repaid, 2)
+            self.emr = round(self.emr, 2)
+            self.principal_left = round(self.principal_left, 2)
+            self.principal_repaid = round(self.principal_repaid, 2)
+
+            self.save()
+
+
+
+class BorrowerDeviabTransaction(models.Model):
+    PAYMENT_CHOICES = ((0, 'CC'),
+                       (1, 'DC'),
+                       (2, 'NB'),
+                       (3, 'WL'))
+
+    TRANSACTION_TYPE = ((0, 'INST'),
+                       (1, 'DOWN'))
+
+    borrower = models.ForeignKey(Borrower, related_name="borrower_transactions")
+    timestamp = models.DateTimeField(default=timezone.now)
+    amount = models.FloatField(default=0.0)
+    payment_id = models.IntegerField(default=0)
+    status = models.CharField(max_length=30, null=True)
+    payment_mode = models.IntegerField(choices=PAYMENT_CHOICES, null=True)
+    transactions_type = models.IntegerField(choices=TRANSACTION_TYPE, null=True)
+
+    def __unicode__(self):
+        return str(self.payment_id)
+
+
+class BorrowerLoanDetails(models.Model):
+
+    borrower = models.ForeignKey(Borrower, related_name="borrower_loan_details")
+    terms = models.ForeignKey(LoanTerm, null=True)
+    loan_amount = models.FloatField(default=0.0)
+    created_date = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=30, null=True)
+
