@@ -3,8 +3,9 @@ from rest_framework import status
 from lytyfy_rest.models import Token
 from django.conf import settings
 from random import randint
+import sendgrid
 import hashlib
-
+from lytyfy_rest.models import Lender
 
 def token_required(func):
     def inner(self, request):
@@ -48,3 +49,35 @@ def getFormDataForPayU(lender, project, payu_amount, wallet_money):
     response['amount'] = str(payu_amount)
     response['txnid'] = txnid
     return response
+
+
+def pushMailToLenders():
+    sg = sendgrid.SendGridAPIClient(
+        apikey="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")
+    data = {
+        "personalizations": [],
+        "from": {
+            "email": "support@lytyfy.org"
+        },
+        "template_id": "d57813ff-30d2-4b66-8128-e50b4849e989"
+    }
+
+    lenders = Lender.objects.all().values('email', 'first_name','last_name')
+
+    for lender in lenders:
+        if lender['first_name']:
+            personalization = {
+                "to": [
+                    {
+                        "email": lender['email']
+                    }
+                ],
+                "substitutions": {
+                    "-project_link-": "https://try.lytyfy.org/#/web/projects/3",
+                    "-first_name-": lender['first_name']+' '+lender['last_name'] if lender['last_name'] else lender['first_name']
+                }
+            }
+            data['personalizations'].append(personalization)
+
+    response = sg.client.mail.send.post(request_body=data)
+    print response
