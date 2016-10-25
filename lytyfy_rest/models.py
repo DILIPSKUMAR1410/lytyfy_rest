@@ -52,6 +52,9 @@ class LenderWithdrawalRequest(models.Model):
     bank_name = models.CharField(max_length=30)
     status = models.IntegerField(choices=STATUS_CHOICES, default=0)
 
+    def __unicode__(self):
+        return self.account_number
+
 
 class Product(models.Model):
     name = models.CharField(max_length=30)
@@ -77,6 +80,9 @@ class FieldPartner(models.Model):
 class LoanTerm(models.Model):
     tenure = models.IntegerField()
     rate = models.FloatField()
+
+    def __unicode__(self):
+        return str(self.tenure)+ " ~ "+str(self.rate)
 
 
 class Project(models.Model):
@@ -257,6 +263,9 @@ class FRBorrowerMap(models.Model):
     field_rep = models.ForeignKey(FieldRep, related_name='fieldrep_borrower')
     borrower = models.OneToOneField(Borrower, related_name='borrower_fieldrep')
 
+    def __unicode__(self):
+        return self.field_rep.first_name +" ~ "+ borrower.first_name
+
 
 class LoanStatus(models.Model):
     principal_repaid = models.FloatField(default=0.0)
@@ -353,3 +362,6 @@ class BorrowerLoanDetails(models.Model):
     project = models.ForeignKey(Project, related_name="borrowers", null=True)
     status = models.BooleanField(default=False)
     created_date = models.DateTimeField(default=timezone.now)
+
+    def __unicode__(self):
+        return self.borrower.first_name
