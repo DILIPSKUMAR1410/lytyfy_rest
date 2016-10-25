@@ -447,7 +447,7 @@ class ListProject(APIView):
             project_detail['borrowers'] = project.borrowers.values(
                 'first_name', 'last_name', 'avatar')
             project_detail['lenders'] = project.lenders.values(
-                'lender_id', 'lender__first_name', 'lender__avatar')
+                'lender_id', 'lender__first_name', 'lender__last_name', 'lender__avatar')
             project_detail['title'] = project.title
             project_detail['loan_raised'] = project.raisedAmount
             project_detail['loan_amount'] = project.targetAmount
@@ -678,7 +678,7 @@ class GetProject(APIView):
         project_detail['borrowers'] = project.borrowers.values(
             'first_name', 'last_name', 'avatar')
         project_detail['lenders'] = project.lenders.values(
-            'lender_id', 'lender__first_name', 'lender__avatar')
+            'lender_id', 'lender__first_name', 'lender__last_name', 'lender__avatar')
         project_detail['title'] = project.title
         project_detail['loan_raised'] = project.raisedAmount
         project_detail['loan_amount'] = project.targetAmount

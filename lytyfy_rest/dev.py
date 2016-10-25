@@ -209,4 +209,4 @@ AUTHENTICATION_BACKENDS = [
     'django_facebook.auth_backends.FacebookBackend'
 ]
 
-VERIFIER_EMAIL = "jsmith503@gmail.com"
+VERIFIER_EMAIL = "vasu@lytyfy.org"
