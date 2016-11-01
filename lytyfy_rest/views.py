@@ -698,7 +698,7 @@ class Installation(APIView):
         fieldrep = request.token.user.fieldrep
         if fieldrep:
             response = fieldrep.borrowers.filter(borrower__status=0).values(
-                'borrower__first_name', 'borrower__last_name', 'borrower__avatar')
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar', 'borrower__address')
             return Response(response, status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
