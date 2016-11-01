@@ -43,5 +43,7 @@ urlpatterns = [
         views.WalletTransactions.as_view()),
     url(r'^api/projects/(?P<project_id>\d+)$',
         views.GetProject.as_view()),
+    url(r'^api/frapp/borrowers/installation',
+        views.Installation.as_view()),
 
 ]

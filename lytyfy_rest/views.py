@@ -692,7 +692,7 @@ class GetProject(APIView):
         return Response(project_detail, status=status.HTTP_200_OK)
 
 
-class GetBorrowersForInstallation(APIView):
+class Installation(APIView):
 
     def get(self, request):
         fieldrep = request.token.user.fieldrep
@@ -701,9 +701,6 @@ class GetBorrowersForInstallation(APIView):
                 'borrower__first_name', 'borrower__last_name', 'borrower__avatar')
             return Response(response, status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class DoInstallation(APIView):
 
     @transaction.atomic
     def post(self, request):
