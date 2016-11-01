@@ -61,6 +61,7 @@ class Product(models.Model):
     description = models.TextField()
     image_url = S3DirectField(dest='product_img',
                               max_length=64, null=True, blank=True)
+    price = models.FloatField(default=0.0)
 
     def __unicode__(self):
         return self.name
@@ -82,7 +83,7 @@ class LoanTerm(models.Model):
     rate = models.FloatField()
 
     def __unicode__(self):
-        return str(self.tenure)+ " ~ "+str(self.rate)
+        return str(self.tenure) + " ~ " + str(self.rate)
 
 
 class Project(models.Model):
@@ -95,7 +96,6 @@ class Project(models.Model):
     enlistDate = models.DateTimeField(default=timezone.now)
     offlistDate = models.DateTimeField()
     field_partner = models.ForeignKey(FieldPartner, null=True)
-    product = models.ForeignKey(Product, null=True)
     image_url = S3DirectField(dest='project_img',
                               max_length=64, null=True, blank=True)
     customer_story = models.TextField(null=True, blank=True)
@@ -229,11 +229,20 @@ class LenderCurrentStatus(models.Model):
 
 
 class Borrower(models.Model):
+    GENDER_CHOICES = ((0, 'Male'),
+                      (1, 'Female'),
+                      (2, 'Other'))
+    STATUS_CHOICES = ((0, 'Installation'),
+                      (1, 'Repayment'),
+                      (2, 'Completed'))
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30, null=True)
     mobile_number = models.CharField(max_length=13, null=True, blank=True)
     avatar = S3DirectField(dest='borrower_img',
                            max_length=64, null=True, blank=True)
+    address = models.TextField(null=True)
+    gender = models.IntegerField(choices=GENDER_CHOICES, null=True)
+    status = models.IntegerField(choices=STATUS_CHOICES, null=True)
 
     def __unicode__(self):
         return self.first_name
@@ -260,11 +269,19 @@ class FieldRep(models.Model):
 
 
 class FRBorrowerMap(models.Model):
-    field_rep = models.ForeignKey(FieldRep, related_name='fieldrep_borrower')
-    borrower = models.OneToOneField(Borrower, related_name='borrower_fieldrep')
+    field_rep = models.ForeignKey(FieldRep, related_name='borrowers')
+    borrower = models.OneToOneField(Borrower, related_name='fieldrep')
 
     def __unicode__(self):
-        return self.field_rep.first_name +" ~ "+ borrower.first_name
+        return self.field_rep.first_name + " ~ " + self.borrower.first_name
+
+
+class ProjectBorrowerMap(models.Model):
+    project = models.ForeignKey(Project, related_name="borrowers")
+    borrower = models.ForeignKey(Borrower, related_name='projects')
+
+    def __unicode__(self):
+        return self.project.title + " ~ " + self.borrower.first_name
 
 
 class LoanStatus(models.Model):
@@ -276,7 +293,7 @@ class LoanStatus(models.Model):
     tenure_left = models.IntegerField()
 
     def updateCurrentStatus(self, amount):
-        rate = self.borrower_loan_details.terms.rate
+        rate = self.loan_details.terms.rate
         self.principal_left += amount
         il = amount * rate / 100
         self.interest_left += il
@@ -291,7 +308,7 @@ class LoanStatus(models.Model):
         return self
 
     def FMI_paid(self, amount):
-        rate = self.borrower_loan_details.terms.rate
+        rate = self.loan_details.terms.rate
         if amount < self.interest_left:
             self.interest_left -= amount
             self.interest_left += self.principal_left * rate / 100
@@ -336,7 +353,7 @@ class BorrowerDeviabTransaction(models.Model):
                         (1, 'DOWN'))
 
     borrower = models.ForeignKey(
-        Borrower, related_name="borrower_transactions")
+        Borrower, related_name="transactions")
     timestamp = models.DateTimeField(default=timezone.now)
     amount = models.FloatField(default=0.0)
     payment_id = models.IntegerField(default=0)
@@ -354,14 +371,37 @@ class BorrowerDeviabTransaction(models.Model):
 class BorrowerLoanDetails(models.Model):
 
     borrower = models.ForeignKey(
-        Borrower, related_name="projects")
+        Borrower, related_name="loans")
     terms = models.ForeignKey(LoanTerm, null=True)
-    amount = models.FloatField(default=0.0)
+    amount = models.FloatField(default=0.0, null=True)
     current_status = models.OneToOneField(
-        LoanStatus, related_name='borrower_loan_details')
-    project = models.ForeignKey(Project, related_name="borrowers", null=True)
+        LoanStatus, related_name='loan_details', null=True)
     status = models.BooleanField(default=False)
     created_date = models.DateTimeField(default=timezone.now)
 
     def __unicode__(self):
         return self.borrower.first_name
+
+
+class DemandData(models.Model):
+
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30, null=True)
+    mobile_number = models.CharField(max_length=13, null=True, blank=True)
+    avatar = S3DirectField(dest='borrower_img',
+                           max_length=64, null=True, blank=True)
+    field_rep = models.ForeignKey(FieldRep, related_name='demand_generation')
+    product = models.ForeignKey(Product, null=True)
+
+    def __unicode__(self):
+        return self.first_name
+
+
+class SalesData(models.Model):
+
+    borrower = models.ForeignKey(
+        Borrower, related_name="purchase")
+    product = models.ForeignKey(
+        Product, related_name="customers")
+    serial = models.CharField(max_length=100)
+    created_date = models.DateTimeField(default=timezone.now)

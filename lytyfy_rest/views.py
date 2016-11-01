@@ -690,3 +690,45 @@ class GetProject(APIView):
         project_detail[
             'status'] = "running" if project.offlistDate > timezone.now() else "completed"
         return Response(project_detail, status=status.HTTP_200_OK)
+
+
+class GetBorrowersForInstallation(APIView):
+
+    def get(self, request):
+        fieldrep = request.token.user.fieldrep
+        if fieldrep:
+            response = fieldrep.borrowers.filter(borrower__status=0).values(
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar')
+            return Response(response, status=status.HTTP_200_OK)
+        return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class DoInstallation(APIView):
+
+    @transaction.atomic
+    def post(self, request):
+        fieldrep = request.token.user.fieldrep
+        borrower_id = request.GET.get('borrower_id', None)
+        product_id = request.GET.get('product_id', None)
+        product_serial = request.GET.get('product_serial', None)
+        down_pay = request.GET.get('amount', None)
+        transactions_type = request.GET.get('transactions_type', None)
+        payment_mode = request.GET.get('payment_mode', None)
+        terms = request.GET.get('terms', None)
+        if fieldrep and borrower_id:
+            SalesData.objects.create(
+                borrower=borrower_id, product=product_id, serial=product_serial)
+            BorrowerDeviabTransaction.objects.create(
+                borrower=borrower_id, amount=down_pay, payment_id=randint(
+                    11111111, 99999999),
+                payment_mode=payment_mode, transactions_type=transactions_type, fieldrep=fieldrep)
+            product_price = Product.objects.get(id=product_id).price
+            finance_amount = product_price - down_pay
+            if finance_amount:
+                loan_status = LoanStatus()
+                loan_status.updateCurrentStatus(finance_amount)
+                BorrowerLoanDetails.objects.create(
+                    borrower=borrower_id, terms=terms, current_status=loan_status, amount=finance_amount, status=True)
+                return Response("Success", status=status.HTTP_200_OK)
+            return Response("Paid upfront", status=status.HTTP_200_OK)
+        return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
