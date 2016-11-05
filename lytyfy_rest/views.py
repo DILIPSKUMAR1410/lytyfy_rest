@@ -694,6 +694,7 @@ class GetProject(APIView):
 
 class Installation(APIView):
 
+    @token_required
     def get(self, request):
         fieldrep = request.token.user.fieldrep
         if fieldrep:
@@ -702,6 +703,7 @@ class Installation(APIView):
             return Response(response, status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
+    @token_required
     @transaction.atomic
     def post(self, request):
         fieldrep = request.token.user.fieldrep
