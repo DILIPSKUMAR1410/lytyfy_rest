@@ -699,7 +699,7 @@ class Installation(APIView):
         fieldrep = request.token.user.fieldrep
         if fieldrep:
             response = fieldrep.borrowers.filter(borrower__status=0).values(
-                'borrower__first_name', 'borrower__last_name', 'borrower__avatar', 'borrower__address')
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar', 'borrower__address','borrower_id')
             return Response(response, status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -728,6 +728,7 @@ class Installation(APIView):
                 loan_status.updateCurrentStatus(finance_amount)
                 BorrowerLoanDetails.objects.create(
                     borrower=borrower_id, terms=terms, current_status=loan_status, amount=finance_amount, status=True)
+                Borrower.objects.filter(id=borrower_id).update(status=1)
                 return Response("Success", status=status.HTTP_200_OK)
             return Response("Paid upfront", status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
