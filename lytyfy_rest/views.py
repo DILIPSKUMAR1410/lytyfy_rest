@@ -731,4 +731,4 @@ class Installation(APIView):
                 Borrower.objects.filter(id=borrower_id).update(status=1)
                 return Response("Success", status=status.HTTP_200_OK)
             return Response("Paid upfront", status=status.HTTP_200_OK)
-        return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'msg': "fieldrep not found"}, status=status.HTTP_400_BAD_REQUEST)
