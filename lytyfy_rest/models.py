@@ -347,7 +347,8 @@ class BorrowerDeviabTransaction(models.Model):
     PAYMENT_CHOICES = ((0, 'CC'),
                        (1, 'DC'),
                        (2, 'NB'),
-                       (3, 'WL'))
+                       (3, 'WL'),
+                       (4, 'CA'))
 
     TRANSACTION_TYPE = ((0, 'INST'),
                         (1, 'DOWN'))
