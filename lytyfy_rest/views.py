@@ -711,7 +711,7 @@ class Installation(APIView):
         borrower_id = request.data.get('borrower_id', None)
         product_id = request.data.get('product_id', None)
         product_serial = request.data.get('product_serial', None)
-        down_pay = request.data.get('amount', None)
+        down_pay = float(request.data.get('amount', None))
         transactions_type = request.data.get('transactions_type', None)
         payment_mode = request.data.get('payment_mode', None)
         terms = request.data.get('terms', None)
