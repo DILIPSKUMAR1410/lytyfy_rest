@@ -7,7 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 from lytyfy_rest.utils import token_required
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
-from lytyfy_rest.models import LenderDeviabTransaction, Project, Lender, LenderCurrentStatus, LenderWallet, Token, LenderWithdrawalRequest, Invite, Borrower
+from lytyfy_rest.models import LenderDeviabTransaction, BorrowerDeviabTransaction, Project, Lender, LenderCurrentStatus,\
+    LenderWallet, Token, LenderWithdrawalRequest, Invite, Borrower, SalesData, BorrowerLoanDetails, Product, LoanStatus
 import hashlib
 import sendgrid
 from random import randint
@@ -699,7 +700,7 @@ class Installation(APIView):
         fieldrep = request.token.user.fieldrep
         if fieldrep:
             response = fieldrep.borrowers.filter(borrower__status=0).values(
-                'borrower__first_name', 'borrower__last_name', 'borrower__avatar', 'borrower__address','borrower_id')
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar', 'borrower__address', 'borrower_id')
             return Response(response, status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -707,28 +708,31 @@ class Installation(APIView):
     @transaction.atomic
     def post(self, request):
         fieldrep = request.token.user.fieldrep
-        borrower_id = request.GET.get('borrower_id', None)
-        product_id = request.GET.get('product_id', None)
-        product_serial = request.GET.get('product_serial', None)
-        down_pay = request.GET.get('amount', None)
-        transactions_type = request.GET.get('transactions_type', None)
-        payment_mode = request.GET.get('payment_mode', None)
-        terms = request.GET.get('terms', None)
-        if fieldrep and borrower_id:
+        borrower_id = request.data.get('borrower_id', None)
+        product_id = request.data.get('product_id', None)
+        product_serial = request.data.get('product_serial', None)
+        down_pay = request.data.get('amount', None)
+        transactions_type = request.data.get('transactions_type', None)
+        payment_mode = request.data.get('payment_mode', None)
+        terms = request.data.get('terms', None)
+        borrower_query = Borrower.objects.filter(id=borrower_id)
+        if fieldrep and borrower_query:
             SalesData.objects.create(
-                borrower=borrower_id, product=product_id, serial=product_serial)
+                borrower=borrower_query.first(), product_id=product_id, serial=product_serial)
             BorrowerDeviabTransaction.objects.create(
-                borrower=borrower_id, amount=down_pay, payment_id=randint(
+                borrower=borrower_query.first(), amount=down_pay, payment_id=randint(
                     11111111, 99999999),
                 payment_mode=payment_mode, transactions_type=transactions_type, fieldrep=fieldrep)
             product_price = Product.objects.get(id=product_id).price
             finance_amount = product_price - down_pay
             if finance_amount:
-                loan_status = LoanStatus()
-                loan_status.updateCurrentStatus(finance_amount)
+                loan_status = LoanStatus(tenure_left=4)
+                loan_status.save()
                 BorrowerLoanDetails.objects.create(
-                    borrower=borrower_id, terms=terms, current_status=loan_status, amount=finance_amount, status=True)
-                Borrower.objects.filter(id=borrower_id).update(status=1)
+                    borrower=borrower_query.first(), terms_id=terms,
+                    current_status=loan_status, amount=finance_amount, status=True)
+                loan_status.updateCurrentStatus(finance_amount)
+                borrower = borrower_query.update(status=1)
                 return Response("Success", status=status.HTTP_200_OK)
             return Response("Paid upfront", status=status.HTTP_200_OK)
         return Response({'msg': "fieldrep not found"}, status=status.HTTP_400_BAD_REQUEST)

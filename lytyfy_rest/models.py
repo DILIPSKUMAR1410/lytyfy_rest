@@ -376,7 +376,7 @@ class BorrowerLoanDetails(models.Model):
     terms = models.ForeignKey(LoanTerm, null=True)
     amount = models.FloatField(default=0.0, null=True)
     current_status = models.OneToOneField(
-        LoanStatus, related_name='loan_details', null=True)
+        LoanStatus, related_name='loan_details', null=True, blank=True)
     status = models.BooleanField(default=False)
     created_date = models.DateTimeField(default=timezone.now)
 
