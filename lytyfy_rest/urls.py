@@ -45,5 +45,7 @@ urlpatterns = [
         views.GetProject.as_view()),
     url(r'^api/frapp/borrowers/installation',
         views.Installation.as_view()),
+    url(r'^api/frapp/borrowers/emi',
+        views.EMICollection.as_view()),
 
 ]

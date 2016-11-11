@@ -700,7 +700,8 @@ class Installation(APIView):
         fieldrep = request.token.user.fieldrep
         if fieldrep:
             response = fieldrep.borrowers.filter(borrower__status=0).values(
-                'borrower__first_name', 'borrower__last_name', 'borrower__avatar', 'borrower__address', 'borrower_id')
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar',
+                'borrower__address', 'borrower__mobile_number', 'borrower_id')
             return Response(response, status=status.HTTP_200_OK)
         return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -735,4 +736,40 @@ class Installation(APIView):
                 borrower = borrower_query.update(status=1)
                 return Response({'msg': "success"}, status=status.HTTP_200_OK)
             return Response("Paid upfront", status=status.HTTP_200_OK)
+        return Response({'msg': "fieldrep not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EMICollection(APIView):
+
+    @token_required
+    def get(self, request):
+        fieldrep = request.token.user.fieldrep
+        if fieldrep:
+            borrowers = fieldrep.borrowers.prefetch_related(
+                'borrower__loans', 'borrower', 'borrower__loans__current_status').filter(borrower__status=1)
+            response = borrowers.values(
+                'borrower__first_name', 'borrower__last_name', 'borrower__avatar',
+                'borrower__address', 'borrower__mobile_number', 'borrower_id',
+                'borrower__loans__current_status__emr', 'borrower__loans__current_status__principal_left',
+                'borrower__loans__current_status__interest_left', 'borrower__loans__current_status__tenure_left')
+            return Response(response, status=status.HTTP_200_OK)
+        return Response({'msg': "token not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+    @token_required
+    @transaction.atomic
+    def post(self, request):
+        fieldrep = request.token.user.fieldrep
+        borrower_id = request.data.get('borrower_id', None)
+        emi = float(request.data.get('emi', None))
+        transactions_type = request.data.get('transactions_type', None)
+        payment_mode = request.data.get('payment_mode', None)
+        borrower = Borrower.objects.prefetch_related(
+            'loans','loans__current_status').get(id=borrower_id)
+        if fieldrep and borrower:
+            BorrowerDeviabTransaction.objects.create(
+                borrower=borrower, amount=emi, payment_id=randint(
+                    11111111, 99999999),
+                payment_mode=payment_mode, transactions_type=transactions_type, fieldrep=fieldrep)
+            borrower.loans.first().current_status.FMI_paid(emi)
+            return Response({'msg': "success"}, status=status.HTTP_200_OK)
         return Response({'msg': "fieldrep not found"}, status=status.HTTP_400_BAD_REQUEST)
