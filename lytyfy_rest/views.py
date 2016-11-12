@@ -735,7 +735,7 @@ class Installation(APIView):
                 loan_status.updateCurrentStatus(finance_amount)
                 borrower = borrower_query.update(status=1)
                 return Response({'msg': "success"}, status=status.HTTP_200_OK)
-            return Response("Paid upfront", status=status.HTTP_200_OK)
+            return Response({'msg': "Paid upfront"}, status=status.HTTP_200_OK)
         return Response({'msg': "fieldrep not found"}, status=status.HTTP_400_BAD_REQUEST)
 
 
