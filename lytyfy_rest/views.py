@@ -162,8 +162,6 @@ class TransactionFormCapture(APIView):
             trasaction['payment_id'] = params['payuMoneyId'][0]
             trasaction['status'] = params['status'][0]
             trasaction['payment_mode'] = 1
-            trasaction['customer_phone'] = params['phone'][0]
-            trasaction['customer_name'] = params['firstname'][0]
             trasaction['product_info'] = params['productinfo'][0]
             trasaction['transactions_type'] = "debit"
             serializer = LenderDeviabTransactionSerializer(data=trasaction)
