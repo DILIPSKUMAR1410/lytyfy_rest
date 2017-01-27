@@ -26,11 +26,12 @@ from lytyfy_rest.utils import getFormDataForPayU
 class HomePageApi(APIView):
 
     def get(self, request, format=None):
-        investors = LenderDeviabTransaction.objects.all().values('lender').distinct().count()
+        # investors = LenderDeviabTransaction.objects.all().values('lender').distinct().count()
+        supporters =  Lender.objects.all().count()
         raised = int(
             sum(Project.objects.all().values_list('raisedAmount', flat=True)))
         borrowers = Borrower.objects.all().count()
-        return Response({'backers': investors+17, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
+        return Response({'backers': supporters+17, 'quantum': raised, 'borrowers': borrowers}, status=status.HTTP_200_OK)
 
 
 class DashBoardApi(APIView):
